@@ -1,0 +1,374 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FTTH ODP</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+.table{
+    font-size:12px !important;
+}
+.table th,.table td{
+    padding:4px !important;
+    white-space:nowrap;
+}
+body{
+    font-size:14px;
+}
+</style>
+
+
+<style>
+.table{
+    font-size:15px !important;
+}
+.table th,
+.table td{
+    font-size:15px !important;
+    
+    padding:6px !important;
+}
+
+.table th{
+    font-size:14px !important;
+}
+
+
+</style>
+
+
+<style>
+.table thead th{
+    font-weight:bold !important;
+}
+.table tbody td{
+    font-weight:normal !important;
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-light">
+<div class="container py-3">
+<h3>📡 WIFI 📡</h3>
+
+<div class="card p-3 mb-3">
+<div class="row g-2">
+<div class="col-md-3"><label>Nama Pelanggan</label><input id="pelanggan" class="form-control"></div>
+<div class="col-md-3"><label>Nama Modem</label><input id="nama_modem" class="form-control"></div>
+<div class="col-md-3"><label>Koordinat</label><input id="koordinat" class="form-control"></div>
+<div class="col-md-3">
+<label>OLT</label>
+<select id="olt" class="form-control">
+<option value="">Pilih OLT</option>
+<option>HSGQ 8985</option>
+<option>HSGQ 8986</option>
+<option>HSGQ 8987</option>
+<option>HIOSO 8988</option>
+</select>
+</div>
+<div class="col-md-2">
+<label>PON/VLAN</label>
+<select id="pon" class="form-control">
+<option value="">Pilih PON/VLAN</option>
+<option>HSGQ PON 1 / 110</option>
+<option>HSGQ PON 2 / 111</option>
+<option>HSGQ PON 3 / 141</option>
+<option>HSGQ PON 4 / 141</option>
+<option>HSGQ PON 1 / 210</option>
+<option>HSGQ PON 2 / 211</option>
+<option>HSGQ PON 3 / 212</option>
+<option>HSGQ PON 4 / 213</option>
+<option>HSGQ PON 1 / 126</option>
+<option>HSGQ PON 2 / 126</option>
+<option>HSGQ PON 3 / 126</option>
+<option>HSGQ PON 4 / 126</option>
+<option>HIOSO PON 1 / 120</option>
+<option>HIOSO PON 2 / 130</option>
+</select>
+</div>
+
+<div class="col-md-2">
+<label>MikroTik</label>
+<select id="mikrotik" class="form-control">
+<option value="">Pilih MikroTik</option>
+<option>CCR1009</option>
+<option>RB4011</option>
+<option>RB450</option>
+</select>
+</div>
+
+<div class="col-md-2"><label>Nama ODP</label><input id="nomor_odp" class="form-control"></div>
+<div class="col-md-2"><label>Port ODP</label><input id="port_odp" class="form-control"></div>
+<div class="col-md-2"><label>Redaman</label><input id="redaman" class="form-control"></div>
+</div>
+
+<div class="mt-3">
+<button class="btn btn-primary" onclick="simpan()" id="btnSimpan">Simpan</button>
+<input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+<button class="btn btn-info" onclick="document.getElementById('importFile').click()">Import Excel</button>
+<button class="btn btn-success" onclick="exportExcel()">Export Excel</button>
+<button class="btn btn-danger" onclick="exportPDF()">Export PDF</button>
+</div>
+</div>
+
+<div class="card p-3">
+<h6>Data Tersimpan</h6>
+
+<input type="text" id="cariPelanggan" class="form-control mb-2"
+placeholder="🔍 Cari Redaman, Nama Pelanggan, Nama Modem, Nama ODP, Nama OLT, PON / VLAN..."
+onkeyup="render()">
+
+<div class="mb-3" id="boxJumlahPencarian" style="display:none;">
+<b>Jumlah hasil pencarian: <span id="jumlahPencarian">0</span></b>
+</div>
+
+<div class="table-responsive">
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Nama Pelanggan</th><th>Nama Modem</th><th>Koordinat</th><th>Nama OLT</th><th>PON / VLAN</th><th>MikroTik</th><th>Nama ODP</th><th>Port</th><th>Redaman</th><th>Aksi</th>
+</tr>
+</thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("ftthData")||"[]");
+let editIndex=-1;
+
+function render(){
+tb.innerHTML="";
+let totalPencarian=0;
+const keyword=(document.getElementById("cariPelanggan")?.value || "").toLowerCase();
+data.forEach((d,i)=>{
+
+if(keyword){
+const searchText = (
+    (d.redaman || "") + " " +
+    (d.pelanggan || "") + " " +
+    (d.nama_modem || "") + " " +
+    (d.nomor_odp || "") + " " +
+    (d.olt || "") + " " +
+    (d.pon || "") + " " +
+    (d.mikrotik || "") + " " +
+    (d.port_odp || "")
+).toLowerCase();
+
+if(!searchText.includes(keyword)) return;
+}
+
+totalPencarian++;
+tb.innerHTML += `<tr>
+<td>${d.pelanggan}</td><td>${d.nama_modem || ''}</td><td>${d.koordinat}</td>
+<td>${d.olt}</td>
+<td>${d.pon}</td>
+<td>${d.mikrotik || ""}</td>
+<td>${d.nomor_odp}</td>
+<td>${d.port_odp}</td>
+<td style="
+font-weight:bold;
+color:${
+parseFloat(d.redaman) <= -25 ? 'red' :
+parseFloat(d.redaman) >= -23 ? 'green' :
+'orange'
+}">
+${d.redaman}
+</td>
+<td>
+<button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button>
+<button class='btn btn-danger btn-sm' onclick='hapusData(${i})'>Hapus</button>
+</td>
+</tr>`;
+});
+
+document.getElementById('jumlahPencarian').innerText=totalPencarian;
+
+if(keyword.trim() !== ""){
+    document.getElementById('boxJumlahPencarian').style.display='block';
+}else{
+    document.getElementById('boxJumlahPencarian').style.display='none';
+}
+
+}
+
+function simpan(){
+const item={
+pelanggan:pelanggan.value,
+nama_modem:nama_modem.value,
+koordinat:koordinat.value,
+olt:olt.value,
+pon:pon.value,
+mikrotik:mikrotik.value,
+nomor_odp:nomor_odp.value,
+port_odp:port_odp.value,
+redaman:redaman.value
+};
+
+if(editIndex==-1){
+    data.push(item);
+}else{
+    data[editIndex]=item;
+    editIndex=-1;
+    btnSimpan.innerText="Simpan";
+}
+
+localStorage.setItem("ftthData",JSON.stringify(data));
+render();
+document.querySelectorAll("input").forEach(x=>x.value="");
+}
+
+function editData(i){
+let d=data[i];
+pelanggan.value=d.pelanggan;
+nama_modem.value=d.nama_modem || '';
+koordinat.value=d.koordinat; olt.value=d.olt;
+pon.value=d.pon; mikrotik.value=d.mikrotik || ""; nomor_odp.value=d.nomor_odp; port_odp.value=d.port_odp; redaman.value=d.redaman;
+editIndex=i;
+btnSimpan.innerText="Update";
+}
+
+function hapusData(i){
+if(confirm("Hapus data ini?")){
+    data.splice(i,1);
+    localStorage.setItem("ftthData",JSON.stringify(data));
+    render();
+}
+}
+
+function exportExcel(){
+const excelData = data.map(d=>({
+    "Nama Pelanggan": d.pelanggan,
+    "Nama Modem": d.nama_modem || "",
+    "Koordinat": d.koordinat,
+    "OLT": d.olt,
+    "PON": d.pon,
+    "MikroTik": d.mikrotik || "",
+    "Nama ODP": d.nomor_odp,
+    "Port ODP": d.port_odp,
+    "Redaman": d.redaman
+}));
+
+const ws = XLSX.utils.json_to_sheet(excelData);
+const wb = XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(wb, ws, "FTTH");
+XLSX.writeFile(wb, "FTTH_Data.xlsx");
+}
+
+function exportPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.text("FTTH",14,15);
+
+    doc.autoTable({
+        startY:20,
+        styles:{
+            fontSize:6,
+            cellPadding:1
+        },
+        headStyles:{
+            fontSize:7
+        },
+        head:[[
+            "Nama Pelanggan",
+            "Koordinat",
+            "OLT",
+            "PON",
+            "MikroTik",
+            "Nama ODP",
+            "Port",
+            "Redaman"
+        ]],
+
+        body:data.map(d=>[
+            d.pelanggan,
+            d.koordinat,
+            d.olt,
+            d.pon,
+            d.mikrotik || "",
+            d.nomor_odp,
+            d.port_odp,
+            d.redaman
+        ]),
+
+        didParseCell: function(dataCell){
+            // Kolom redaman = index 7
+            if(dataCell.section === 'body' && dataCell.column.index === 7){
+
+                const redaman = parseFloat(dataCell.cell.raw);
+
+                // Merah jika <= -25
+                if(redaman <= -25){
+                    dataCell.cell.styles.textColor = [255,0,0];
+                    dataCell.cell.styles.fontStyle = 'bold';
+                }
+
+                // Hijau jika >= -23
+                else if(redaman >= -23){
+                    dataCell.cell.styles.textColor = [0,128,0];
+                    dataCell.cell.styles.fontStyle = 'bold';
+                }
+
+                // Oranye untuk nilai di antaranya
+                else{
+                    dataCell.cell.styles.textColor = [255,140,0];
+                    dataCell.cell.styles.fontStyle = 'bold';
+                }
+            }
+        }
+    });
+
+    doc.save("FTTH_Data.pdf");
+}
+
+
+
+function importExcel(event){
+    const file = event.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+        const workbook = XLSX.read(e.target.result,{type:'binary'});
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        rows.forEach(r=>{
+            data.push({
+                pelanggan: r["Nama Pelanggan"] || "",
+                nama_modem: r["Nama Modem"] || "",
+                koordinat: r["Koordinat"] || "",
+                olt: r["OLT"] || "",
+                pon: r["PON"] || "",
+                mikrotik: r["MikroTik"] || "",
+                nomor_odp: r["Nama ODP"] || "",
+                port_odp: r["Port ODP"] || "",
+                redaman: r["Redaman"] || ""
+            });
+        });
+
+        localStorage.setItem("ftthData",JSON.stringify(data));
+        render();
+        alert("Import Excel berhasil");
+    };
+
+    reader.readAsBinaryString(file);
+}
+
+
+
+render();
+</script>
+</body>
+</html>
