@@ -52,10 +52,18 @@ body{
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Supabase SDK & Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="bg-light">
 <div class="container py-3">
-<h3>📡 WIFI 📡</h3>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">ðŸ“¡ WIFI ðŸ“¡ <span id="dbStatus" class="badge bg-secondary fs-6">Checking Connection...</span></h3>
+    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#supabaseSettingsModal">
+        âš™ï¸ Supabase Settings
+    </button>
+</div>
 
 <div class="card p-3 mb-3">
 <div class="row g-2">
@@ -121,7 +129,7 @@ body{
 <h6>Data Tersimpan</h6>
 
 <input type="text" id="cariPelanggan" class="form-control mb-2"
-placeholder="🔍 Cari Redaman, Nama Pelanggan, Nama Modem, Nama ODP, Nama OLT, PON / VLAN..."
+placeholder="ðŸ” Cari Redaman, Nama Pelanggan, Nama Modem, Nama ODP, Nama OLT, PON / VLAN..."
 onkeyup="render()">
 
 <div class="mb-3" id="boxJumlahPencarian" style="display:none;">
@@ -141,127 +149,352 @@ onkeyup="render()">
 </div>
 </div>
 
+<!-- Supabase Settings Modal -->
+<div class="modal fade" id="supabaseSettingsModal" tabindex="-1" aria-labelledby="supabaseSettingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="supabaseSettingsModalLabel">âš™ï¸ Konfigurasi Supabase</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="modalSupabaseUrl" class="form-label">Supabase URL</label>
+          <input type="text" class="form-control" id="modalSupabaseUrl" placeholder="https://xxxx.supabase.co">
+        </div>
+        <div class="mb-3">
+          <label for="modalSupabaseAnonKey" class="form-label">Supabase Anon Key</label>
+          <input type="password" class="form-control" id="modalSupabaseAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
+        <div class="mb-3">
+          <label for="modalSupabaseTable" class="form-label">Nama Tabel</label>
+          <input type="text" class="form-control" id="modalSupabaseTable" value="ftth_data" placeholder="ftth_data">
+        </div>
+        <div class="alert alert-info py-2" style="font-size: 13px;">
+          <strong>Info:</strong> Kredensial ini disimpan di LocalStorage peramban Anda secara lokal dan aman. Jika dikosongkan, aplikasi kembali menggunakan penyimpanan lokal bawaan.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary" onclick="simpanConfigSupabase()">Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-let data = JSON.parse(localStorage.getItem("ftthData")||"[]");
-let editIndex=-1;
+const SUPABASE_URL = "https://tlwhvpfdixkagsdxeymp.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_tOxtMAecYtBAkl1nKoobVw_nUgPvu-b"; 
+const SUPABASE_TABLE = "ftth_data";
+
+let supabaseClient = null;
+let data = [];
+let editIndex = -1;
+
+function getRedamanColor(valStr) {
+    if (!valStr) return 'black';
+    const cleanStr = valStr.toString().trim().toLowerCase();
+    if (cleanStr === 'offline') return 'red';
+    
+    const val = parseFloat(cleanStr);
+    if (isNaN(val)) return 'black';
+
+    if (val <= -25) {
+        return 'green';
+    } else if (val <= -18) {
+        return 'orange';
+    } else if (val > 25) {
+        return 'orange';
+    } else {
+        return 'green'; // normal range e.g. -17 to 25
+    }
+}
+
+function getSupabaseConfig() {
+    let url = SUPABASE_URL;
+    let key = SUPABASE_ANON_KEY;
+    let tableName = SUPABASE_TABLE || "ftth_data";
+
+    if (!url || !key || key.includes("MASUKKAN") || key === "") {
+        url = localStorage.getItem("supabaseUrl") || "";
+        key = localStorage.getItem("supabaseAnonKey") || "";
+        tableName = localStorage.getItem("supabaseTable") || "ftth_data";
+    }
+    return { url, key, tableName };
+}
+
+function loadConfigValues() {
+    const { url, key, tableName } = getSupabaseConfig();
+    document.getElementById("modalSupabaseUrl").value = url;
+    document.getElementById("modalSupabaseAnonKey").value = key;
+    document.getElementById("modalSupabaseTable").value = tableName;
+}
+
+async function initSupabase() {
+    const { url, key, tableName } = getSupabaseConfig();
+    const statusBadge = document.getElementById("dbStatus");
+
+    if (url && key && !key.includes("MASUKKAN") && key !== "") {
+        try {
+
+            supabaseClient = window.supabase.createClient(url, key);
+            
+            // Test connection by fetching 1 row
+            const { data: testData, error } = await supabaseClient.from(tableName).select('id').limit(1);
+            if (error) throw error;
+            
+            statusBadge.innerText = "Supabase Connected";
+            statusBadge.className = "badge bg-success fs-6";
+            return true;
+        } catch (err) {
+            console.error("Supabase connection failed:", err);
+            statusBadge.innerText = "Supabase Connection Error";
+            statusBadge.className = "badge bg-danger fs-6";
+            supabaseClient = null;
+            return false;
+        }
+    } else {
+        statusBadge.innerText = "LocalStorage Mode";
+        statusBadge.className = "badge bg-secondary fs-6";
+        supabaseClient = null;
+        return false;
+    }
+}
+
+async function loadData() {
+    const isSupabase = await initSupabase();
+    if (isSupabase) {
+        try {
+            const { tableName } = getSupabaseConfig();
+            const { data: dbData, error } = await supabaseClient
+                .from(tableName)
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            data = dbData || [];
+        } catch (err) {
+            alert("Gagal memuat data dari Supabase: " + err.message);
+            data = JSON.parse(localStorage.getItem("ftthData") || "[]");
+        }
+    } else {
+        data = JSON.parse(localStorage.getItem("ftthData") || "[]");
+    }
+    render();
+}
+
+async function simpanConfigSupabase() {
+    const url = document.getElementById("modalSupabaseUrl").value.trim();
+    const key = document.getElementById("modalSupabaseAnonKey").value.trim();
+    const table = document.getElementById("modalSupabaseTable").value.trim() || "ftth_data";
+
+    if (url === SUPABASE_URL || !url) {
+        localStorage.removeItem("supabaseUrl");
+    } else {
+        localStorage.setItem("supabaseUrl", url);
+    }
+
+    if (key === SUPABASE_ANON_KEY || !key) {
+        localStorage.removeItem("supabaseAnonKey");
+    } else {
+        localStorage.setItem("supabaseAnonKey", key);
+    }
+
+    if (table === SUPABASE_TABLE) {
+        localStorage.removeItem("supabaseTable");
+    } else {
+        localStorage.setItem("supabaseTable", table);
+    }
+
+
+    const modalEl = document.getElementById('supabaseSettingsModal');
+    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    modal.hide();
+
+    // Reload
+    await loadData();
+}
 
 function render(){
-tb.innerHTML="";
-let totalPencarian=0;
-const keyword=(document.getElementById("cariPelanggan")?.value || "").toLowerCase();
-data.forEach((d,i)=>{
+    const tb = document.getElementById("tb");
+    tb.innerHTML="";
+    let totalPencarian=0;
+    const keyword=(document.getElementById("cariPelanggan")?.value || "").toLowerCase();
+    data.forEach((d,i)=>{
 
-if(keyword){
-const searchText = (
-    (d.redaman || "") + " " +
-    (d.pelanggan || "") + " " +
-    (d.nama_modem || "") + " " +
-    (d.nomor_odp || "") + " " +
-    (d.olt || "") + " " +
-    (d.pon || "") + " " +
-    (d.mikrotik || "") + " " +
-    (d.port_odp || "")
-).toLowerCase();
+        if(keyword){
+            const searchText = (
+                (d.redaman || "") + " " +
+                (d.pelanggan || "") + " " +
+                (d.nama_modem || "") + " " +
+                (d.nomor_odp || "") + " " +
+                (d.olt || "") + " " +
+                (d.pon || "") + " " +
+                (d.mikrotik || "") + " " +
+                (d.port_odp || "")
+            ).toLowerCase();
 
-if(!searchText.includes(keyword)) return;
+            if(!searchText.includes(keyword)) return;
+        }
+
+        totalPencarian++;
+        tb.innerHTML += `<tr>
+        <td>${d.pelanggan}</td><td>${d.nama_modem || ''}</td><td>${d.koordinat}</td>
+        <td>${d.olt}</td>
+        <td>${d.pon}</td>
+        <td>${d.mikrotik || ""}</td>
+        <td>${d.nomor_odp}</td>
+        <td>${d.port_odp}</td>
+        <td style="
+        font-weight:bold;
+        color:${getRedamanColor(d.redaman)}">
+        ${d.redaman}
+        </td>
+        <td>
+        <button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button>
+        <button class='btn btn-danger btn-sm' onclick='hapusData(${i})'>Hapus</button>
+        </td>
+        </tr>`;
+    });
+
+    document.getElementById('jumlahPencarian').innerText=totalPencarian;
+
+    if(keyword.trim() !== ""){
+        document.getElementById('boxJumlahPencarian').style.display='block';
+    }else{
+        document.getElementById('boxJumlahPencarian').style.display='none';
+    }
 }
 
-totalPencarian++;
-tb.innerHTML += `<tr>
-<td>${d.pelanggan}</td><td>${d.nama_modem || ''}</td><td>${d.koordinat}</td>
-<td>${d.olt}</td>
-<td>${d.pon}</td>
-<td>${d.mikrotik || ""}</td>
-<td>${d.nomor_odp}</td>
-<td>${d.port_odp}</td>
-<td style="
-font-weight:bold;
-color:${
-parseFloat(d.redaman) <= -25 ? 'red' :
-parseFloat(d.redaman) >= -23 ? 'green' :
-'orange'
-}">
-${d.redaman}
-</td>
-<td>
-<button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button>
-<button class='btn btn-danger btn-sm' onclick='hapusData(${i})'>Hapus</button>
-</td>
-</tr>`;
-});
+async function simpan(){
+    const pelangganInput = document.getElementById("pelanggan");
+    const modemInput = document.getElementById("nama_modem");
+    const koordinatInput = document.getElementById("koordinat");
+    const oltInput = document.getElementById("olt");
+    const ponInput = document.getElementById("pon");
+    const mikrotikInput = document.getElementById("mikrotik");
+    const nomorOdpInput = document.getElementById("nomor_odp");
+    const portOdpInput = document.getElementById("port_odp");
+    const redamanInput = document.getElementById("redaman");
+    const btnSimpan = document.getElementById("btnSimpan");
 
-document.getElementById('jumlahPencarian').innerText=totalPencarian;
+    const item={
+        pelanggan: pelangganInput.value,
+        nama_modem: modemInput.value,
+        koordinat: koordinatInput.value,
+        olt: oltInput.value,
+        pon: ponInput.value,
+        mikrotik: mikrotikInput.value,
+        nomor_odp: nomorOdpInput.value,
+        port_odp: portOdpInput.value,
+        redaman: redamanInput.value
+    };
 
-if(keyword.trim() !== ""){
-    document.getElementById('boxJumlahPencarian').style.display='block';
-}else{
-    document.getElementById('boxJumlahPencarian').style.display='none';
-}
+    if (supabaseClient) {
+        try {
+            const { tableName } = getSupabaseConfig();
+            if (editIndex == -1) {
+                const { error } = await supabaseClient.from(tableName).insert([item]);
+                if (error) throw error;
+            } else {
+                const originalItem = data[editIndex];
+                if (originalItem.id) {
+                    const { error } = await supabaseClient.from(tableName).update(item).eq('id', originalItem.id);
+                    if (error) throw error;
+                } else {
+                    alert("Data tidak memiliki ID Supabase, tidak bisa di-update.");
+                    return;
+                }
+                editIndex = -1;
+                btnSimpan.innerText = "Simpan";
+            }
+        } catch (err) {
+            alert("Gagal menyimpan ke Supabase: " + err.message);
+            return;
+        }
+    } else {
 
-}
+        if (editIndex == -1) {
+            data.push(item);
+        } else {
+            data[editIndex] = item;
+            editIndex = -1;
+            btnSimpan.innerText = "Simpan";
+        }
+        localStorage.setItem("ftthData", JSON.stringify(data));
+    }
 
-function simpan(){
-const item={
-pelanggan:pelanggan.value,
-nama_modem:nama_modem.value,
-koordinat:koordinat.value,
-olt:olt.value,
-pon:pon.value,
-mikrotik:mikrotik.value,
-nomor_odp:nomor_odp.value,
-port_odp:port_odp.value,
-redaman:redaman.value
-};
+    await loadData();
 
-if(editIndex==-1){
-    data.push(item);
-}else{
-    data[editIndex]=item;
-    editIndex=-1;
-    btnSimpan.innerText="Simpan";
-}
-
-localStorage.setItem("ftthData",JSON.stringify(data));
-render();
-document.querySelectorAll("input").forEach(x=>x.value="");
+    pelangganInput.value = "";
+    modemInput.value = "";
+    koordinatInput.value = "";
+    oltInput.value = "";
+    ponInput.value = "";
+    mikrotikInput.value = "";
+    nomorOdpInput.value = "";
+    portOdpInput.value = "";
+    redamanInput.value = "";
 }
 
 function editData(i){
-let d=data[i];
-pelanggan.value=d.pelanggan;
-nama_modem.value=d.nama_modem || '';
-koordinat.value=d.koordinat; olt.value=d.olt;
-pon.value=d.pon; mikrotik.value=d.mikrotik || ""; nomor_odp.value=d.nomor_odp; port_odp.value=d.port_odp; redaman.value=d.redaman;
-editIndex=i;
-btnSimpan.innerText="Update";
+    const d=data[i];
+    document.getElementById("pelanggan").value=d.pelanggan;
+    document.getElementById("nama_modem").value=d.nama_modem || '';
+    document.getElementById("koordinat").value=d.koordinat;
+    document.getElementById("olt").value=d.olt;
+    document.getElementById("pon").value=d.pon;
+    document.getElementById("mikrotik").value=d.mikrotik || "";
+    document.getElementById("nomor_odp").value=d.nomor_odp;
+    document.getElementById("port_odp").value=d.port_odp;
+    document.getElementById("redaman").value=d.redaman;
+    
+    editIndex=i;
+    document.getElementById("btnSimpan").innerText="Update";
 }
 
-function hapusData(i){
-if(confirm("Hapus data ini?")){
-    data.splice(i,1);
-    localStorage.setItem("ftthData",JSON.stringify(data));
-    render();
-}
+async function hapusData(i){
+    if(confirm("Hapus data ini?")){
+        const item = data[i];
+        if (supabaseClient) {
+            try {
+                const { tableName } = getSupabaseConfig();
+                if (item.id) {
+                    const { error } = await supabaseClient.from(tableName).delete().eq('id', item.id);
+                    if (error) throw error;
+                } else {
+                    alert("Data tidak memiliki ID Supabase, tidak bisa dihapus di database.");
+                    return;
+                }
+            } catch (err) {
+                alert("Gagal menghapus dari Supabase: " + err.message);
+                return;
+            }
+        } else {
+            data.splice(i,1);
+            localStorage.setItem("ftthData",JSON.stringify(data));
+        }
+        await loadData();
+    }
 }
 
 function exportExcel(){
-const excelData = data.map(d=>({
-    "Nama Pelanggan": d.pelanggan,
-    "Nama Modem": d.nama_modem || "",
-    "Koordinat": d.koordinat,
-    "OLT": d.olt,
-    "PON": d.pon,
-    "MikroTik": d.mikrotik || "",
-    "Nama ODP": d.nomor_odp,
-    "Port ODP": d.port_odp,
-    "Redaman": d.redaman
-}));
+    const excelData = data.map(d=>({
+        "Nama Pelanggan": d.pelanggan,
+        "Nama Modem": d.nama_modem || "",
+        "Koordinat": d.koordinat,
+        "OLT": d.olt,
+        "PON": d.pon,
+        "MikroTik": d.mikrotik || "",
+        "Nama ODP": d.nomor_odp,
+        "Port ODP": d.port_odp,
+        "Redaman": d.redaman
+    }));
 
-const ws = XLSX.utils.json_to_sheet(excelData);
-const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
 
-XLSX.utils.book_append_sheet(wb, ws, "FTTH");
-XLSX.writeFile(wb, "FTTH_Data.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "FTTH");
+    XLSX.writeFile(wb, "FTTH_Data.xlsx");
 }
 
 function exportPDF(){
@@ -281,6 +514,7 @@ function exportPDF(){
         },
         head:[[
             "Nama Pelanggan",
+            "Nama Modem",
             "Koordinat",
             "OLT",
             "PON",
@@ -292,6 +526,7 @@ function exportPDF(){
 
         body:data.map(d=>[
             d.pelanggan,
+            d.nama_modem || "",
             d.koordinat,
             d.olt,
             d.pon,
@@ -302,27 +537,22 @@ function exportPDF(){
         ]),
 
         didParseCell: function(dataCell){
-            // Kolom redaman = index 7
-            if(dataCell.section === 'body' && dataCell.column.index === 7){
-
-                const redaman = parseFloat(dataCell.cell.raw);
-
-                // Merah jika <= -25
-                if(redaman <= -25){
+            if(dataCell.section === 'body' && dataCell.column.index === 8){
+                const redamanStr = dataCell.cell.raw;
+                const color = getRedamanColor(redamanStr);
+                if(color === 'red'){
                     dataCell.cell.styles.textColor = [255,0,0];
                     dataCell.cell.styles.fontStyle = 'bold';
                 }
-
-                // Hijau jika >= -23
-                else if(redaman >= -23){
+                else if(color === 'green'){
                     dataCell.cell.styles.textColor = [0,128,0];
                     dataCell.cell.styles.fontStyle = 'bold';
                 }
-
-                // Oranye untuk nilai di antaranya
-                else{
+                else if(color === 'orange'){
                     dataCell.cell.styles.textColor = [255,140,0];
                     dataCell.cell.styles.fontStyle = 'bold';
+                } else {
+                    dataCell.cell.styles.textColor = [0,0,0]; // default black
                 }
             }
         }
@@ -331,44 +561,54 @@ function exportPDF(){
     doc.save("FTTH_Data.pdf");
 }
 
-
-
-function importExcel(event){
+async function importExcel(event){
     const file = event.target.files[0];
     if(!file) return;
 
     const reader = new FileReader();
 
-    reader.onload = function(e){
+    reader.onload = async function(e){
         const workbook = XLSX.read(e.target.result,{type:'binary'});
         const sheetName = workbook.SheetNames[0];
         const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-        rows.forEach(r=>{
-            data.push({
-                pelanggan: r["Nama Pelanggan"] || "",
-                nama_modem: r["Nama Modem"] || "",
-                koordinat: r["Koordinat"] || "",
-                olt: r["OLT"] || "",
-                pon: r["PON"] || "",
-                mikrotik: r["MikroTik"] || "",
-                nomor_odp: r["Nama ODP"] || "",
-                port_odp: r["Port ODP"] || "",
-                redaman: r["Redaman"] || ""
-            });
-        });
+        const newItems = rows.map(r=>({
+            pelanggan: r["Nama Pelanggan"] !== undefined ? String(r["Nama Pelanggan"]) : "",
+            nama_modem: r["Nama Modem"] !== undefined ? String(r["Nama Modem"]) : "",
+            koordinat: r["Koordinat"] !== undefined ? String(r["Koordinat"]) : "",
+            olt: r["OLT"] !== undefined ? String(r["OLT"]) : "",
+            pon: r["PON"] !== undefined ? String(r["PON"]) : "",
+            mikrotik: r["MikroTik"] !== undefined ? String(r["MikroTik"]) : "",
+            nomor_odp: r["Nama ODP"] !== undefined ? String(r["Nama ODP"]) : "",
+            port_odp: r["Port ODP"] !== undefined ? String(r["Port ODP"]) : "",
+            redaman: r["Redaman"] !== undefined ? String(r["Redaman"]) : ""
+        }));
 
-        localStorage.setItem("ftthData",JSON.stringify(data));
-        render();
-        alert("Import Excel berhasil");
+        if (supabaseClient) {
+            try {
+                const { tableName } = getSupabaseConfig();
+                const { error } = await supabaseClient.from(tableName).insert(newItems);
+                if (error) throw error;
+                alert("Import Excel berhasil ke Supabase");
+            } catch (err) {
+                alert("Gagal mengimpor ke Supabase: " + err.message);
+                return;
+            }
+        } else {
+            data.push(...newItems);
+            localStorage.setItem("ftthData",JSON.stringify(data));
+            alert("Import Excel berhasil ke LocalStorage");
+        }
+
+        await loadData();
     };
 
     reader.readAsBinaryString(file);
 }
 
-
-
-render();
+// Initialization on startup
+loadConfigValues();
+loadData();
 </script>
 </body>
 </html>
