@@ -189,21 +189,24 @@ let data = [];
 let editIndex = -1;
 
 function getRedamanColor(valStr) {
-    if (!valStr) return 'black';
+    if (!valStr || !valStr.toString().trim()) return 'white';
     const cleanStr = valStr.toString().trim().toLowerCase();
     if (cleanStr === 'offline') return 'red';
-    
-    const val = parseFloat(cleanStr);
-    if (isNaN(val)) return 'black';
 
-    if (val <= -25) {
+    const val = parseFloat(cleanStr);
+    if (isNaN(val)) return 'white';
+
+    // -23.99 ke atas = hijau
+    if (val >= -23.99) {
         return 'green';
-    } else if (val <= -18) {
-        return 'orange';
-    } else if (val > 25) {
-        return 'orange';
-    } else {
-        return 'green'; // normal range e.g. -17 to 25
+    }
+    // -24.00 sampai -24.99 = merah muda
+    else if (val >= -24.99) {
+        return 'deeppink';
+    }
+    // -25.00 sampai -30.00 (dan lebih rendah) = merah
+    else {
+        return 'red';
     }
 }
 
@@ -343,8 +346,9 @@ function render(){
         <td>${d.port_odp}</td>
         <td style="
         font-weight:bold;
-        color:${getRedamanColor(d.redaman)}">
-        ${d.redaman}
+        color:${getRedamanColor(d.redaman) === 'white' ? 'black' : 'white'};
+        background-color:${getRedamanColor(d.redaman)}">
+        ${d.redaman || ''}
         </td>
         <td>
         <button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button>
@@ -545,8 +549,8 @@ function exportPDF(){
                     dataCell.cell.styles.textColor = [0,128,0];
                     dataCell.cell.styles.fontStyle = 'bold';
                 }
-                else if(color === 'orange'){
-                    dataCell.cell.styles.textColor = [255,140,0];
+                else if(color === 'deeppink'){
+                    dataCell.cell.styles.textColor = [255,20,147];
                     dataCell.cell.styles.fontStyle = 'bold';
                 } else {
                     dataCell.cell.styles.textColor = [0,0,0]; // default black
