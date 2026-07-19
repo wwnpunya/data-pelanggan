@@ -66,8 +66,15 @@ body{
 <div class="row g-2">
 <div class="col-md-3"><label>Nama Pelanggan</label><input id="pelanggan" class="form-control"></div>
 <div class="col-md-3"><label>Nama Modem</label><input id="nama_modem" class="form-control"></div>
-<div class="col-md-3"><label>Koordinat</label><input id="koordinat" class="form-control"></div>
-<div class="col-md-3">
+<div class="col-md-4">
+<label>Koordinat</label>
+<div class="input-group">
+<input id="koordinat" class="form-control" placeholder="">
+<a class="btn btn-outline-success" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" title="Buka Google Maps untuk mengambil titik koordinat">📍 Buka Google Maps</a>
+</div>
+<small class="text-muted">Buka Google Maps, pilih titik lokasi, lalu salin koordinat dan tempel di sini.</small>
+</div>
+<div class="col-md-2">
 <label>OLT</label>
 <select id="olt" class="form-control">
 <option value="">Pilih OLT</option>
@@ -338,7 +345,8 @@ function render(){
 
         totalPencarian++;
         tb.innerHTML += `<tr>
-        <td>${d.pelanggan}</td><td>${d.nama_modem || ''}</td><td>${d.koordinat}</td>
+        <td>${d.pelanggan}</td><td>${d.nama_modem || ''}</td>
+        <td>${d.koordinat ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank" rel="noopener noreferrer">${d.koordinat}</a>` : ''}</td>
         <td>${d.olt}</td>
         <td>${d.pon}</td>
         <td>${d.mikrotik || ""}</td>
