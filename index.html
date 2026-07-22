@@ -66,15 +66,15 @@ body{
 <div class="row g-2">
 <div class="col-md-3"><label>Nama Pelanggan</label><input id="pelanggan" class="form-control"></div>
 <div class="col-md-3"><label>Nama Modem</label><input id="nama_modem" class="form-control"></div>
-<div class="col-md-4">
+<div class="col-md-3">
 <label>Koordinat</label>
 <div class="input-group">
-<input id="koordinat" class="form-control" placeholder="">
-<a class="btn btn-outline-success" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" title="Buka Google Maps untuk mengambil titik koordinat">📍 Buka Google Maps</a>
+<input id="koordinat" class="form-control" placeholder="-7.123456, 112.123456">
+<button type="button" class="btn btn-outline-success" onclick="ambilKoordinat()" title="Ambil koordinat lokasi perangkat">📍 Ambil Koordinat</button>
 </div>
-<small class="text-muted">Buka Google Maps, pilih titik lokasi, lalu salin koordinat dan tempel di sini.</small>
+<small class="text-muted">Klik Ambil Koordinat untuk mengisi latitude dan longitude lokasi perangkat secara otomatis.</small>
 </div>
-<div class="col-md-2">
+<div class="col-md-3">
 <label>OLT</label>
 <select id="olt" class="form-control">
 <option value="">Pilih OLT</option>
@@ -140,6 +140,13 @@ onkeyup="render()">
 <b>Jumlah hasil pencarian: <span id="jumlahPencarian">0</span></b>
 </div>
 
+<style>
+#hasilCepat{margin-bottom:15px}
+.hasil-card{border-left:8px solid #0d6efd;background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.hasil-nama{font-size:22px;font-weight:bold}
+.hasil-red{font-size:20px;font-weight:bold;padding:6px 10px;border-radius:8px;display:inline-block;margin-top:8px}
+</style>
+<div id="hasilCepat" style="display:none"></div>
 <div class="table-responsive">
 <table class="table table-bordered">
 <thead>
@@ -322,56 +329,80 @@ async function simpanConfigSupabase() {
 }
 
 function render(){
-    const tb = document.getElementById("tb");
-    tb.innerHTML="";
-    let totalPencarian=0;
-    const keyword=(document.getElementById("cariPelanggan")?.value || "").toLowerCase();
-    data.forEach((d,i)=>{
+const tb=document.getElementById("tb");
+tb.innerHTML="";
+const box=document.getElementById("hasilCepat");
+const keyword=(document.getElementById("cariPelanggan")?.value||"").toLowerCase().trim();
+let total=0;
+let cards="";
 
-        if(keyword){
-            const searchText = (
-                (d.redaman || "") + " " +
-                (d.pelanggan || "") + " " +
-                (d.nama_modem || "") + " " +
-                (d.nomor_odp || "") + " " +
-                (d.olt || "") + " " +
-                (d.pon || "") + " " +
-                (d.mikrotik || "") + " " +
-                (d.port_odp || "")
-            ).toLowerCase();
+data.forEach((d,i)=>{
+ const txt=((d.redaman||"")+" "+(d.pelanggan||"")+" "+(d.nama_modem||"")+" "+(d.nomor_odp||"")+" "+(d.olt||"")+" "+(d.pon||"")+" "+(d.mikrotik||"")+" "+(d.port_odp||"")).toLowerCase();
+ if(keyword && !txt.includes(keyword)) return;
+ total++;
 
-            if(!searchText.includes(keyword)) return;
-        }
+ const bg=getRedamanColor(d.redaman);
+ const fg=(bg==="white")?"#000":"#fff";
 
-        totalPencarian++;
-        tb.innerHTML += `<tr>
-        <td>${d.pelanggan}</td><td>${d.nama_modem || ''}</td>
-        <td>${d.koordinat ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank" rel="noopener noreferrer">${d.koordinat}</a>` : ''}</td>
-        <td>${d.olt}</td>
-        <td>${d.pon}</td>
-        <td>${d.mikrotik || ""}</td>
-        <td>${d.nomor_odp}</td>
-        <td>${d.port_odp}</td>
-        <td style="
-        font-weight:bold;
-        color:${getRedamanColor(d.redaman) === 'white' ? 'black' : 'white'};
-        background-color:${getRedamanColor(d.redaman)}">
-        ${d.redaman || ''}
-        </td>
-        <td>
-        <button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button>
-        <button class='btn btn-danger btn-sm' onclick='hapusData(${i})'>Hapus</button>
-        </td>
-        </tr>`;
-    });
+ cards+=`<div class="hasil-card">
+ <div class="hasil-nama">👤 ${d.pelanggan}</div>
+ <div>📡 ${d.nama_modem||""}</div>
+ <div class="hasil-red" style="background:${bg};color:${fg}">📶 ${d.redaman||"-"}</div>
+ </div>`;
 
-    document.getElementById('jumlahPencarian').innerText=totalPencarian;
+ tb.innerHTML+=`<tr>
+<td>${d.pelanggan}</td>
+<td>${d.nama_modem||''}</td>
+<td>${d.koordinat?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>`:''}</td>
+<td>${d.olt}</td><td>${d.pon}</td><td>${d.mikrotik||""}</td>
+<td>${d.nomor_odp}</td><td>${d.port_odp}</td>
+<td style="font-weight:bold;color:${fg};background:${bg}">${d.redaman||""}</td>
+<td><button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button><button class='btn btn-danger btn-sm' onclick='hapusData(${i})'>Hapus</button></td>
+</tr>`;
+});
 
-    if(keyword.trim() !== ""){
-        document.getElementById('boxJumlahPencarian').style.display='block';
-    }else{
-        document.getElementById('boxJumlahPencarian').style.display='none';
+document.getElementById("jumlahPencarian").innerText=total;
+document.getElementById("boxJumlahPencarian").style.display=keyword?"block":"none";
+if(keyword && total){
+ box.style.display="block";
+ box.innerHTML=cards;
+}else{
+ box.style.display="none";
+ box.innerHTML="";
+}
+}
+
+function ambilKoordinat(){
+    const input = document.getElementById("koordinat");
+
+    if (!navigator.geolocation) {
+        alert("Browser Anda tidak mendukung fitur lokasi/GPS.");
+        return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const lat = position.coords.latitude.toFixed(6);
+            const lng = position.coords.longitude.toFixed(6);
+            input.value = lat + ", " + lng;
+        },
+        function(error) {
+            let pesan = "Gagal mengambil koordinat.";
+            if (error.code === error.PERMISSION_DENIED) {
+                pesan = "Izin lokasi ditolak. Silakan izinkan akses lokasi pada browser.";
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                pesan = "Lokasi tidak tersedia.";
+            } else if (error.code === error.TIMEOUT) {
+                pesan = "Waktu pengambilan lokasi habis. Silakan coba lagi.";
+            }
+            alert(pesan);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+    );
 }
 
 async function simpan(){
