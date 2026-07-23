@@ -346,9 +346,28 @@ data.forEach((d,i)=>{
 
  cards+=`<div class="hasil-card">
  <div class="hasil-nama">👤 ${d.pelanggan}</div>
- <div>📡 ${d.nama_modem||""}</div>
- <div class="hasil-red" style="background:${bg};color:${fg}">📶 ${d.redaman||"-"}</div>
- </div>`;
+
+ <div style="margin-top:6px;">📡 <b>${d.nama_modem||"-"}</b></div>
+
+ <div style="margin-top:4px;">
+ 📍 Koordinat:
+ ${d.koordinat?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>`:"-"}
+ </div>
+
+ <div style="margin-top:4px;">
+ 📦 ODP: <b>${d.nomor_odp||"-"}</b> | Port: <b>${d.port_odp||"-"}</b>
+ </div>
+
+ <div style="margin-top:4px;">
+ 🌐 VLAN/PON: <b>${d.pon||"-"}</b>
+ </div>
+
+ <div class="hasil-red" style="background:${bg};color:${fg};margin-top:10px">📶 ${d.redaman||"-"}</div>
+  <div style="margin-top:12px;display:flex;gap:8px;">
+   <button class="btn btn-warning btn-sm flex-fill" onclick="editData(${i})">✏️ Edit</button>
+   <button class="btn btn-danger btn-sm flex-fill" onclick="hapusData(${i})">🗑️ Hapus</button>
+ </div>
+</div>`;
 
  rows+=`<tr>
 <td>${d.pelanggan}</td>
