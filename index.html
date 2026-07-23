@@ -139,9 +139,9 @@ placeholder="🔍 Cari Redaman, Nama Pelanggan, Nama ODP, OLT, PON atau Nomor Po
 <div id="hasilCepat" style="display:none"></div>
 <div class="table-responsive">
 <table class="table table-bordered">
-<thead>
-</tr>
-</thead>
+<thead><tr>
+<th>Nama Pelanggan</th><th>Nama Modem</th><th>Koordinat</th><th>Nama OLT</th><th>PON / VLAN</th><th>Nama ODP</th><th>Port</th><th>Redaman</th><th>Aksi</th>
+</tr></thead>
 <tbody id="tb"></tbody>
 </table>
 </div>
@@ -418,7 +418,7 @@ async function simpan(){
     const koordinatInput = document.getElementById("koordinat");
     const oltInput = document.getElementById("olt");
     const ponInput = document.getElementById("pon");
-    const mikrotikInput = document.getElementById("mikrotik");
+    const mikrotikInput = null;
     const nomorOdpInput = document.getElementById("nomor_odp");
     const portOdpInput = document.getElementById("port_odp");
     const redamanInput = document.getElementById("redaman");
@@ -430,7 +430,7 @@ async function simpan(){
         koordinat: koordinatInput.value,
         olt: oltInput.value,
         pon: ponInput.value,
-        mikrotik: mikrotikInput.value,
+        mikrotik: "",
         nomor_odp: nomorOdpInput.value,
         port_odp: portOdpInput.value,
         redaman: redamanInput.value
@@ -477,26 +477,25 @@ async function simpan(){
     koordinatInput.value = "";
     oltInput.value = "";
     ponInput.value = "";
-    mikrotikInput.value = "";
+    
     nomorOdpInput.value = "";
     portOdpInput.value = "";
     redamanInput.value = "";
 }
 
 function editData(i){
-    const d=data[i];
-    document.getElementById("pelanggan").value=d.pelanggan;
-    document.getElementById("nama_modem").value=d.nama_modem || '';
-    document.getElementById("koordinat").value=d.koordinat;
-    document.getElementById("olt").value=d.olt;
-    document.getElementById("pon").value=d.pon;
-    document.getElementById("mikrotik").value=d.mikrotik || "";
-    document.getElementById("nomor_odp").value=d.nomor_odp;
-    document.getElementById("port_odp").value=d.port_odp;
-    document.getElementById("redaman").value=d.redaman;
-    
-    editIndex=i;
-    document.getElementById("btnSimpan").innerText="Update";
+ const d=data[i];
+ pelanggan.value=d.pelanggan||"";
+ nama_modem.value=d.nama_modem||"";
+ koordinat.value=d.koordinat||"";
+ olt.value=d.olt||"";
+ pon.value=d.pon||"";
+ nomor_odp.value=d.nomor_odp||"";
+ port_odp.value=d.port_odp||"";
+ redaman.value=d.redaman||"";
+ editIndex=i;
+ btnSimpan.innerText="Update";
+ window.scrollTo({top:0,behavior:"smooth"});
 }
 
 async function hapusData(i){
