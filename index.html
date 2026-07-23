@@ -134,7 +134,7 @@ body{
 
 <input type="text" id="cariPelanggan" class="form-control mb-2"
 placeholder="🔍 Cari Redaman, Nama Pelanggan, Nama ODP, OLT, PON atau Nomor Port..."
-onkeyup="render()">
+>
 
 <div class="mb-3" id="boxJumlahPencarian" style="display:none;">
 <b>Jumlah hasil pencarian: <span id="jumlahPencarian">0</span></b>
@@ -330,7 +330,7 @@ async function simpanConfigSupabase() {
 
 function render(){
 const tb=document.getElementById("tb");
-tb.innerHTML="";
+let rows="";
 const box=document.getElementById("hasilCepat");
 const keyword=(document.getElementById("cariPelanggan")?.value||"").toLowerCase().trim();
 let total=0;
@@ -350,7 +350,7 @@ data.forEach((d,i)=>{
  <div class="hasil-red" style="background:${bg};color:${fg}">📶 ${d.redaman||"-"}</div>
  </div>`;
 
- tb.innerHTML+=`<tr>
+ rows+=`<tr>
 <td>${d.pelanggan}</td>
 <td>${d.nama_modem||''}</td>
 <td>${d.koordinat?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>`:''}</td>
@@ -645,6 +645,19 @@ async function importExcel(event){
 
     reader.readAsBinaryString(file);
 }
+
+
+// Optimasi pencarian (debounce)
+let searchDelay;
+document.addEventListener("DOMContentLoaded",()=>{
+  const cari=document.getElementById("cariPelanggan");
+  if(cari){
+    cari.addEventListener("input",()=>{
+      clearTimeout(searchDelay);
+      searchDelay=setTimeout(render,250);
+    });
+  }
+});
 
 // Initialization on startup
 loadConfigValues();
