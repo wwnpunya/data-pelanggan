@@ -20,6 +20,39 @@
 body{
     font-size:14px;
 }
+
+
+/* Responsive HP */
+@media (max-width:576px){
+    .hasil-card{
+        padding:6px !important;
+        margin-bottom:5px !important;
+        border-left-width:4px !important;
+        border-radius:8px !important;
+    }
+
+    .hasil-card div{
+        font-size:12px !important;
+        margin-top:2px !important;
+        margin-bottom:2px !important;
+        line-height:1.2;
+    }
+
+    .hasil-nama{
+        font-size:14px !important;
+    }
+
+    .btn-sm{
+        padding:3px 6px !important;
+        font-size:12px !important;
+    }
+
+    .hasil-red{
+        padding:2px 6px !important;
+        font-size:11px !important;
+    }
+}
+
 </style>
 
 
@@ -55,6 +88,14 @@ body{
 <!-- Supabase SDK & Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+/* Sembunyikan tabel data tersimpan, gunakan tampilan card saja */
+.table-responsive{
+    display:none !important;
+}
+</style>
+
 </head>
 <body class="bg-light">
 <div class="container py-3">
@@ -105,6 +146,16 @@ body{
 </select>
 </div>
 
+<div class="col-md-2">
+<label>MikroTik</label>
+<select id="mikrotik" class="form-control">
+<option value="">Pilih MikroTik</option>
+<option>CCR1009</option>
+<option>RB4011</option>
+<option>RB450</option>
+</select>
+</div>
+
 <div class="col-md-2"><label>Nama ODP</label><input id="nomor_odp" class="form-control"></div>
 <div class="col-md-2"><label>Port ODP</label><input id="port_odp" class="form-control"></div>
 <div class="col-md-2"><label>Redaman</label><input id="redaman" class="form-control"></div>
@@ -131,15 +182,19 @@ placeholder="🔍 Cari Redaman, Nama Pelanggan, Nama ODP, OLT, PON atau Nomor Po
 </div>
 
 <style>
-#hasilCepat{margin-bottom:15px}
+#hasilCepat{margin-bottom:9px}
 .hasil-card{border-left:8px solid #0d6efd;background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.hasil-nama{font-size:22px;font-weight:bold}
-.hasil-red{font-size:20px;font-weight:bold;padding:6px 10px;border-radius:8px;display:inline-block;margin-top:8px}
+.hasil-nama{font-size:15px;font-weight:bold}
+.hasil-red{font-size:15px;font-weight:bold;padding:6px 10px;border-radius:8px;display:inline-block;margin-top:8px}
 </style>
 <div id="hasilCepat" style="display:none"></div>
 <div class="table-responsive">
 <table class="table table-bordered">
-</tr></thead>
+<thead>
+<tr>
+<th>Nama Pelanggan</th><th>Nama Modem</th><th>Koordinat</th><th>Nama OLT</th><th>PON / VLAN</th><th>MikroTik</th><th>Nama ODP</th><th>Port</th><th>Redaman</th><th>Aksi</th>
+</tr>
+</thead>
 <tbody id="tb"></tbody>
 </table>
 </div>
@@ -340,16 +395,16 @@ data.forEach((d,i)=>{
  ${d.koordinat?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>`:"-"}
  </div>
 
- <div style="margin-top:4px;">
+ <div style="margin-top:2px;">
  📦 ODP: <b>${d.nomor_odp||"-"}</b> | Port: <b>${d.port_odp||"-"}</b>
  </div>
 
- <div style="margin-top:4px;">
+ <div style="margin-top:2px;">
  🌐 VLAN/PON: <b>${d.pon||"-"}</b>
  </div>
 
  <div class="hasil-red" style="background:${bg};color:${fg};margin-top:10px">📶 ${d.redaman||"-"}</div>
-  <div style="margin-top:12px;display:flex;gap:8px;">
+  <div style="margin-top:9px;display:flex;gap:8px;">
    <button class="btn btn-warning btn-sm flex-fill" onclick="editData(${i})">✏️ Edit</button>
    <button class="btn btn-danger btn-sm flex-fill" onclick="hapusData(${i})">🗑️ Hapus</button>
  </div>
@@ -416,7 +471,7 @@ async function simpan(){
     const koordinatInput = document.getElementById("koordinat");
     const oltInput = document.getElementById("olt");
     const ponInput = document.getElementById("pon");
-    const mikrotikInput = null;
+    const mikrotikInput = document.getElementById("mikrotik");
     const nomorOdpInput = document.getElementById("nomor_odp");
     const portOdpInput = document.getElementById("port_odp");
     const redamanInput = document.getElementById("redaman");
@@ -428,7 +483,7 @@ async function simpan(){
         koordinat: koordinatInput.value,
         olt: oltInput.value,
         pon: ponInput.value,
-        mikrotik: "",
+        mikrotik: mikrotikInput.value,
         nomor_odp: nomorOdpInput.value,
         port_odp: portOdpInput.value,
         redaman: redamanInput.value
@@ -475,25 +530,26 @@ async function simpan(){
     koordinatInput.value = "";
     oltInput.value = "";
     ponInput.value = "";
-    
+    mikrotikInput.value = "";
     nomorOdpInput.value = "";
     portOdpInput.value = "";
     redamanInput.value = "";
 }
 
 function editData(i){
- const d=data[i];
- pelanggan.value=d.pelanggan||"";
- nama_modem.value=d.nama_modem||"";
- koordinat.value=d.koordinat||"";
- olt.value=d.olt||"";
- pon.value=d.pon||"";
- nomor_odp.value=d.nomor_odp||"";
- port_odp.value=d.port_odp||"";
- redaman.value=d.redaman||"";
- editIndex=i;
- btnSimpan.innerText="Update";
- window.scrollTo({top:0,behavior:"smooth"});
+    const d=data[i];
+    document.getElementById("pelanggan").value=d.pelanggan;
+    document.getElementById("nama_modem").value=d.nama_modem || '';
+    document.getElementById("koordinat").value=d.koordinat;
+    document.getElementById("olt").value=d.olt;
+    document.getElementById("pon").value=d.pon;
+    document.getElementById("mikrotik").value=d.mikrotik || "";
+    document.getElementById("nomor_odp").value=d.nomor_odp;
+    document.getElementById("port_odp").value=d.port_odp;
+    document.getElementById("redaman").value=d.redaman;
+    
+    editIndex=i;
+    document.getElementById("btnSimpan").innerText="Update";
 }
 
 async function hapusData(i){
