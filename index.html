@@ -477,8 +477,22 @@ async function simpan(){
     const redamanInput = document.getElementById("redaman");
     const btnSimpan = document.getElementById("btnSimpan");
 
+    const namaPelanggan = pelangganInput.value.trim();
+
+    // Cegah nama pelanggan ganda
+    const duplikat = data.findIndex((d, idx) =>
+        idx !== editIndex &&
+        (d.pelanggan || "").trim().toLowerCase() === namaPelanggan.toLowerCase()
+    );
+
+    if (duplikat !== -1) {
+        alert("Nama pelanggan sudah ada! Gunakan nama yang berbeda.");
+        pelangganInput.focus();
+        return;
+    }
+
     const item={
-        pelanggan: pelangganInput.value,
+        pelanggan: namaPelanggan,
         nama_modem: modemInput.value,
         koordinat: koordinatInput.value,
         olt: oltInput.value,
