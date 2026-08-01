@@ -1737,6 +1737,85 @@ app.listen(3000, () => console.log('OLT Proxy server running on port 3000'));</p
             document.getElementById("oltStatOffline").innerText = offline;
         }
 
+        async function runOltDiagnostics(errMessage, o, proxyUrl) {
+            const desc = document.getElementById("activeOltStatusDesc");
+            if (!desc) return;
+            
+            // Check if proxy is running
+            let proxyRunning = false;
+            try {
+                // Get proxy base url (remove '/api/olt/telnet' endpoint)
+                const baseUrl = proxyUrl.split('/api/olt/')[0];
+                const res = await fetch(`${baseUrl}/api/health`, { method: 'GET' });
+                const data = await res.json();
+                if (data.status === 'running') {
+                    proxyRunning = true;
+                }
+            } catch(e) {
+                proxyRunning = false;
+            }
+
+            let statusProxyHtml = proxyRunning 
+                ? `<li class="text-success mb-2">🟢 <strong>Server Proxy Lokal:</strong> AKTIF / BERJALAN di <code>${proxyUrl}</code>.</li>`
+                : `<li class="text-danger mb-2">🔴 <strong>Server Proxy Lokal:</strong> MATI / TIDAK MERESPONS.
+                    <br><span class="text-secondary small ms-3">Indikasi: Node.js server belum dinyalakan atau port 3000 diblokir.</span>
+                    <br><span class="text-secondary small ms-3">💡 <strong>Solusi:</strong> Jalankan berkas <strong><code>run-proxy-from-c.bat</code></strong> di desktop Anda.</span>
+                   </li>`;
+                
+            let statusOltHtml = "";
+            if (proxyRunning) {
+                const cleanErr = errMessage.toLowerCase();
+                if (cleanErr.includes("connect") || cleanErr.includes("timeout") || cleanErr.includes("econnrefused") || cleanErr.includes("host") || cleanErr.includes("reach")) {
+                    statusOltHtml = `
+                        <li class="text-danger mb-2">🔴 <strong>Koneksi Fisik ke OLT Gagal (TCP Error):</strong>
+                            <br><span class="text-secondary small ms-3">Indikasi: Server proxy berjalan tetapi tidak bisa menghubungi IP OLT <code>${o.ip}:${o.port}</code>.</span>
+                            <br><span class="text-secondary small ms-3">💡 <strong>Langkah Pemeriksaan:</strong></span>
+                            <ol class="text-secondary small ms-3 ps-3">
+                                <li>Buka CMD di PC proxy dan jalankan <code>ping ${o.ip}</code>. Pastikan ada balasan (reply).</li>
+                                <li><strong>PENTING:</strong> Tutup aplikasi Putty atau terminal Telnet lain yang sedang tersambung ke OLT (OLT hanya mengizinkan 1 koneksi Telnet secara bersamaan).</li>
+                                <li>Pastikan port <code>${o.port}</code> benar dan layanan Telnet sudah diaktifkan di OLT tersebut.</li>
+                            </ol>
+                        </li>
+                    `;
+                } else if (cleanErr.includes("login") || cleanErr.includes("auth") || cleanErr.includes("password") || cleanErr.includes("fail") || cleanErr.includes("prompt") || cleanErr.includes("bad")) {
+                    statusOltHtml = `
+                        <li class="text-warning mb-2">🟡 <strong>Kegagalan Autentikasi / Login (Auth Error):</strong>
+                            <br><span class="text-secondary small ms-3">Indikasi: Jalur Telnet terbuka tetapi OLT menolak kredensial masuk.</span>
+                            <br><span class="text-secondary small ms-3">💡 <strong>Langkah Pemeriksaan:</strong></span>
+                            <ol class="text-secondary small ms-3 ps-3">
+                                <li>Periksa kembali apakah <strong>Username (<code>${o.username}</code>)</strong> dan <strong>Password</strong> di form OLT sudah benar.</li>
+                                <li>Pastikan pilihan merek OLT (Anda memilih <code>${o.tipe}</code>) sudah tepat. Jika HSGQ, pastikan format username/password prompt didukung.</li>
+                            </ol>
+                        </li>
+                    `;
+                } else {
+                    statusOltHtml = `
+                        <li class="text-danger mb-2">🔴 <strong>Gangguan Lainnya:</strong>
+                            <br><span class="text-secondary small ms-3">Detail: <code>${errMessage}</code></span>
+                        </li>
+                    `;
+                }
+            } else {
+                statusOltHtml = `
+                    <li class="text-muted mb-2">⚪ <strong>Status Koneksi OLT:</strong> Tidak dapat diperiksa karena server proxy tidak aktif.</li>
+                `;
+            }
+
+            desc.className = "alert alert-danger p-3 mb-3 border border-danger-subtle rounded-3 text-start d-block";
+            desc.innerHTML = `
+                <div class="d-flex align-items-center mb-2">
+                    <span class="fs-4 me-2">🔍</span>
+                    <h6 class="alert-heading fw-bold m-0 text-danger" style="font-size: 14px;">Laporan Diagnosis Koneksi OLT</h6>
+                </div>
+                <hr class="my-2 text-danger opacity-25">
+                <p class="small text-muted mb-2"><strong>Pesan Eror Node.js:</strong> <code class="text-danger">${errMessage}</code></p>
+                <ul class="ps-3 mb-0 small" style="list-style-type: none;">
+                    ${statusProxyHtml}
+                    ${statusOltHtml}
+                </ul>
+            `;
+        }
+
         function jalankanTelnetOLT(index) {
             const o = olts[index];
             if (!o) return;
@@ -1848,8 +1927,10 @@ app.listen(3000, () => console.log('OLT Proxy server running on port 3000'));</p
 
                 badge.innerText = "Gagal";
                 badge.className = "badge bg-danger fs-6";
-                desc.className = "alert alert-danger py-2 px-3 mb-3";
-                desc.innerText = "Koneksi Gagal: " + err.message + ". Pastikan server proxy lokal Anda sudah berjalan (node olt-proxy.js) dan IP OLT dapat dijangkau dari mesin proxy.";
+                
+                // Panggil sistem diagnosis eror dinamis
+                await runOltDiagnostics(err.message, o, proxyUrl);
+                
                 outputBox.innerText = "{\n  \"error\": \"" + err.message + "\"\n}";
                 
                 activeOltOnuData = null;
