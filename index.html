@@ -1,741 +1,1897 @@
-
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FTTH ODP</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-<style>
-.table{
-    font-size:12px !important;
-}
-.table th,.table td{
-    padding:4px !important;
-    white-space:nowrap;
-}
-body{
-    font-size:14px;
-}
-
-
-/* Responsive HP */
-@media (max-width:576px){
-    .hasil-card{
-        padding:6px !important;
-        margin-bottom:5px !important;
-        border-left-width:4px !important;
-        border-radius:8px !important;
-    }
-
-    .hasil-card div{
-        font-size:12px !important;
-        margin-top:2px !important;
-        margin-bottom:2px !important;
-        line-height:1.2;
-    }
-
-    .hasil-nama{
-        font-size:14px !important;
-    }
-
-    .btn-sm{
-        padding:3px 6px !important;
-        font-size:12px !important;
-    }
-
-    .hasil-red{
-        padding:2px 6px !important;
-        font-size:11px !important;
-    }
-}
-
-</style>
-
-
-<style>
-.table{
-    font-size:15px !important;
-}
-.table th,
-.table td{
-    font-size:15px !important;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FTTH ODP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     
-    padding:6px !important;
-}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Supabase SDK & Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-.table th{
-    font-size:14px !important;
-}
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            background-color: #f8fafc;
+            color: #334155;
+        }
 
+        /* Modern Custom Tab Pills */
+        .nav-pills-custom {
+            background: #ffffff;
+            padding: 6px;
+            border-radius: 50px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        
+        .nav-pills-custom::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
+        }
 
-</style>
+        .nav-pills-custom .nav-item {
+            flex: 1;
+            text-align: center;
+        }
 
+        @media (max-width: 576px) {
+            .nav-pills-custom {
+                border-radius: 25px;
+                padding: 4px;
+                justify-content: space-between;
+            }
+            .nav-pills-custom .nav-item {
+                flex: 1;
+            }
+            .nav-pills-custom .nav-link {
+                white-space: nowrap;
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+            .tab-icon {
+                display: none !important;
+            }
+        }
 
-<style>
-.table thead th{
-    font-weight:bold !important;
-}
-.table tbody td{
-    font-weight:normal !important;
-}
-</style>
+        .nav-pills-custom .nav-link {
+            font-weight: 600;
+            color: #64748b;
+            border-radius: 50px;
+            padding: 10px 20px;
+            transition: all 0.25s ease;
+            width: 100%;
+            border: none;
+            background: transparent;
+        }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Supabase SDK & Bootstrap JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        .nav-pills-custom .nav-link.active {
+            background-color: #4f46e5 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
 
-<style>
-/* Sembunyikan tabel data tersimpan, gunakan tampilan card saja */
-.table-responsive{
-    display:none !important;
-}
-</style>
+        .nav-pills-custom .nav-link:hover:not(.active) {
+            background-color: #f1f5f9;
+            color: #334155;
+        }
+
+        /* Cards Design */
+        .card {
+            border: none !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+            background: #ffffff;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: #ffffff;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Results Card */
+        #hasilCepat {
+            margin-bottom: 9px;
+        }
+
+        .hasil-card {
+            border: 1px solid #e2e8f0;
+            border-left: 6px solid #4f46e5 !important;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hasil-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+        }
+
+        .hasil-nama {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .hasil-red {
+            font-size: 14px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Button styles */
+        .btn-primary {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 10px 20px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4338ca;
+            border-color: #4338ca;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        /* Table (kept for backup/hidden purposes) */
+        .table-responsive {
+            display: none !important;
+        }
+
+        /* Responsive Mobile Styles */
+        @media (max-width:576px) {
+            .hasil-card {
+                padding: 12px !important;
+                margin-bottom: 8px !important;
+                border-left-width: 4px !important;
+                border-radius: 10px !important;
+            }
+
+            .hasil-card div {
+                font-size: 12px !important;
+                margin-top: 2px !important;
+                margin-bottom: 2px !important;
+                line-height: 1.3;
+            }
+
+            .hasil-nama {
+                font-size: 14px !important;
+            }
+
+            .btn-sm {
+                padding: 4px 8px !important;
+                font-size: 12px !important;
+            }
+
+            .hasil-red {
+                padding: 4px 8px !important;
+                font-size: 12px !important;
+            }
+        }
+    </style>
 
 </head>
+
 <body class="bg-light">
-<div class="container py-3">
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="mb-0"> 📡 WIFI 📡 <span id="dbStatus" class="badge bg-secondary fs-6">Checking Connection...</span></h3>
-</div>
-
-<div class="card p-3 mb-3">
-<div class="row g-2">
-<div class="col-md-3"><label>Nama Pelanggan</label><input id="pelanggan" class="form-control"></div>
-<div class="col-md-3"><label>Nama Modem</label><input id="nama_modem" class="form-control"></div>
-<div class="col-md-3">
-<label>Koordinat</label>
-<div class="input-group">
-<input id="koordinat" class="form-control" placeholder="-7.123456, 112.123456">
-<button type="button" class="btn btn-outline-success" onclick="ambilKoordinat()" title="Ambil koordinat lokasi perangkat">📍 Ambil Koordinat</button>
-</div>
-<small class="text-muted">Klik Ambil Koordinat untuk mengisi latitude dan longitude lokasi perangkat secara otomatis.</small>
-</div>
-<div class="col-md-3">
-<label>OLT</label>
-<select id="olt" class="form-control">
-<option value="">Pilih OLT</option>
-<option>HSGQ 8985</option>
-<option>HSGQ 8986</option>
-<option>HSGQ 8987</option>
-<option>HIOSO 8988</option>
-</select>
-</div>
-<div class="col-md-2">
-<label>PON/VLAN</label>
-<select id="pon" class="form-control">
-<option value="">Pilih PON/VLAN</option>
-<option>HSGQ PON 1 / 110</option>
-<option>HSGQ PON 2 / 111</option>
-<option>HSGQ PON 3 / 141</option>
-<option>HSGQ PON 4 / 140</option>
-<option>HSGQ PON 1 / 210</option>
-<option>HSGQ PON 2 / 211</option>
-<option>HSGQ PON 3 / 212</option>
-<option>HSGQ PON 4 / 213</option>
-<option>HSGQ PON 1 / 126</option>
-<option>HSGQ PON 2 / 126</option>
-<option>HSGQ PON 3 / 126</option>
-<option>HSGQ PON 4 / 126</option>
-<option>HIOSO PON 1 / 120</option>
-<option>HIOSO PON 2 / 130</option>
-</select>
-</div>
-
-<div class="col-md-2">
-<label>MikroTik</label>
-<select id="mikrotik" class="form-control">
-<option value="">Pilih MikroTik</option>
-<option>CCR1009</option>
-<option>RB4011</option>
-<option>RB450</option>
-</select>
-</div>
-
-<div class="col-md-2"><label>Nama ODP</label><input id="nomor_odp" class="form-control"></div>
-<div class="col-md-2"><label>Port ODP</label><input id="port_odp" class="form-control"></div>
-<div class="col-md-2"><label>Redaman</label><input id="redaman" class="form-control"></div>
-</div>
-
-<div class="mt-3">
-<button class="btn btn-primary" onclick="simpan()" id="btnSimpan">Simpan</button>
-<input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
-<button class="btn btn-info" onclick="document.getElementById('importFile').click()">Import Excel</button>
-<button class="btn btn-success" onclick="exportExcel()">Export Excel</button>
-<button class="btn btn-danger" onclick="exportPDF()">Export PDF</button>
-</div>
-</div>
-
-<div class="card p-3">
-<h6>Data Tersimpan</h6>
-
-<input type="text" id="cariPelanggan" class="form-control mb-2"
-placeholder="🔍 Cari Redaman, Nama Pelanggan, Nama ODP, OLT, PON atau Nomor Port..."
->
-
-<div class="mb-3" id="boxJumlahPencarian" style="display:none;">
-<b>Jumlah hasil pencarian: <span id="jumlahPencarian">0</span></b>
-</div>
-
-<style>
-#hasilCepat{margin-bottom:9px}
-.hasil-card{border-left:8px solid #0d6efd;background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.hasil-nama{font-size:15px;font-weight:bold}
-.hasil-red{font-size:15px;font-weight:bold;padding:6px 10px;border-radius:8px;display:inline-block;margin-top:8px}
-</style>
-<div id="hasilCepat" style="display:none"></div>
-<div class="table-responsive">
-<table class="table table-bordered">
-<thead>
-<tr>
-<th>Nama Pelanggan</th><th>Nama Modem</th><th>Koordinat</th><th>Nama OLT</th><th>PON / VLAN</th><th>MikroTik</th><th>Nama ODP</th><th>Port</th><th>Redaman</th><th>Aksi</th>
-</tr>
-</thead>
-<tbody id="tb"></tbody>
-</table>
-</div>
-</div>
-</div>
-
-<!-- Supabase Settings Modal -->
-<div class="modal fade" id="supabaseSettingsModal" tabindex="-1" aria-labelledby="supabaseSettingsModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="supabaseSettingsModalLabel">âš™ï¸ Konfigurasi Supabase</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label for="modalSupabaseUrl" class="form-label">Supabase URL</label>
-          <input type="text" class="form-control" id="modalSupabaseUrl" placeholder="https://xxxx.supabase.co">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <h3 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                <span>📡</span> FTTH ODP 
+                <span id="dbStatus" class="badge bg-secondary fs-6 ms-2 cursor-pointer" 
+                      style="cursor: pointer;" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#supabaseSettingsModal" 
+                      onclick="loadConfigValues()"
+                      title="Klik untuk konfigurasi database">
+                    Checking Connection...
+                </span>
+            </h3>
         </div>
-        <div class="mb-3">
-          <label for="modalSupabaseAnonKey" class="form-label">Supabase Anon Key</label>
-          <input type="password" class="form-control" id="modalSupabaseAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills nav-pills-custom mb-4" id="wifiTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tambah-tab" data-bs-toggle="tab" data-bs-target="#tambah-tab-pane" type="button" role="tab" aria-controls="tambah-tab-pane" aria-selected="false">
+                    <span class="tab-icon">📝</span> Tambah Pelanggan
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list-tab-pane" type="button" role="tab" aria-controls="list-tab-pane" aria-selected="true">
+                    <span class="tab-icon">👥</span> List Pelanggan
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="olt-tab" data-bs-toggle="tab" data-bs-target="#olt-tab-pane" type="button" role="tab" aria-controls="olt-tab-pane" aria-selected="false">
+                    <span class="tab-icon">🔌</span> OLT Telnet
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="wifiTabContent">
+            <!-- TAB 1: Tambah/Edit Data Pelanggan -->
+            <div class="tab-pane fade" id="tambah-tab-pane" role="tabpanel" aria-labelledby="tambah-tab" tabindex="0">
+                <div class="card p-4 mb-3">
+                    <h5 class="card-title fw-bold text-primary mb-4 d-flex align-items-center gap-2">
+                        <span>📝</span> Form Data Pelanggan
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Nama Pelanggan</label>
+                            <input id="pelanggan" class="form-control" placeholder="Nama lengkap">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Nama Modem</label>
+                            <input id="nama_modem" class="form-control" placeholder="Tipe/Nama modem">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Koordinat</label>
+                            <div class="input-group">
+                                <input id="koordinat" class="form-control" placeholder="-7.123456, 112.123456">
+                                <button type="button" class="btn btn-outline-success" onclick="ambilKoordinat()" title="Ambil koordinat lokasi perangkat">📍 Koordinat</button>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Klik tombol 📍 untuk mengisi lokasi otomatis.</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">OLT</label>
+                            <select id="olt" class="form-select">
+                                <option value="">Pilih OLT</option>
+                                <option>HSGQ 8985</option>
+                                <option>HSGQ 8986</option>
+                                <option>HSGQ 8987</option>
+                                <option>HIOSO 8988</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">PON/VLAN</label>
+                            <select id="pon" class="form-select">
+                                <option value="">Pilih PON/VLAN</option>
+                                <option>HSGQ PON 1 / 110</option>
+                                <option>HSGQ PON 2 / 111</option>
+                                <option>HSGQ PON 3 / 141</option>
+                                <option>HSGQ PON 4 / 140</option>
+                                <option>HSGQ PON 1 / 210</option>
+                                <option>HSGQ PON 2 / 211</option>
+                                <option>HSGQ PON 3 / 212</option>
+                                <option>HSGQ PON 4 / 213</option>
+                                <option>HSGQ PON 1 / 126</option>
+                                <option>HSGQ PON 2 / 126</option>
+                                <option>HSGQ PON 3 / 126</option>
+                                <option>HSGQ PON 4 / 126</option>
+                                <option>HIOSO PON 1 / 120</option>
+                                <option>HIOSO PON 2 / 130</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">MikroTik</label>
+                            <select id="mikrotik" class="form-select">
+                                <option value="">Pilih MikroTik</option>
+                                <option>CCR1009</option>
+                                <option>RB4011</option>
+                                <option>RB450</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Nama ODP</label>
+                            <input id="nomor_odp" class="form-control" placeholder="ODP-XXX">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Port ODP</label>
+                            <input id="port_odp" class="form-control" placeholder="1-8">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Redaman</label>
+                            <input id="redaman" class="form-control" placeholder="-22.5">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button class="btn btn-primary px-4 py-2" onclick="simpan()" id="btnSimpan">💾 Simpan Data</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: List Pelanggan -->
+            <div class="tab-pane fade show active" id="list-tab-pane" role="tabpanel" aria-labelledby="list-tab" tabindex="0">
+                <div class="card p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                        <h5 class="card-title fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+                            <span>👥</span> Daftar Pelanggan Tersimpan
+                        </h5>
+                        <div class="d-flex flex-wrap gap-2">
+                            <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+                            <button class="btn btn-outline-secondary btn-sm px-3" onclick="document.getElementById('importFile').click()">📤 Import Excel</button>
+                            <button class="btn btn-outline-success btn-sm px-3" onclick="exportExcel()">📥 Export Excel</button>
+                            <button class="btn btn-outline-danger btn-sm px-3" onclick="exportPDF()">📄 Export PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <div class="input-group flex-grow-1">
+                            <span class="input-group-text bg-white border-end-0">🔍</span>
+                            <input type="text" id="cariPelanggan" class="form-control border-start-0 bg-white"
+                                placeholder="Cari berdasarkan nama, redaman, ODP, OLT, PON, port...">
+                        </div>
+                        <button type="button" id="btnFilterOpen" class="btn btn-outline-secondary d-flex align-items-center gap-1 px-3" data-bs-toggle="modal" data-bs-target="#filterModal">
+                            🎛️
+                        </button>
+                    </div>
+
+                    <div class="mb-3 text-muted small" id="boxJumlahPencarian" style="display:none;">
+                        Jumlah hasil pencarian: <span id="jumlahPencarian" class="fw-bold text-primary">0</span>
+                    </div>
+
+                    <div id="hasilCepat"></div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Nama Pelanggan</th>
+                                    <th>Nama Modem</th>
+                                    <th>Koordinat</th>
+                                    <th>Nama OLT</th>
+                                    <th>PON / VLAN</th>
+                                    <th>MikroTik</th>
+                                    <th>Nama ODP</th>
+                                    <th>Port</th>
+                                    <th>Redaman</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tb"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: OLT Telnet -->
+            <div class="tab-pane fade" id="olt-tab-pane" role="tabpanel" aria-labelledby="olt-tab" tabindex="0">
+                <div class="card p-4 mb-3 text-start">
+                    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                        <h5 class="card-title fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+                            <span>🔌</span> Daftar Perangkat OLT
+                        </h5>
+                        <button type="button" class="btn btn-primary btn-sm px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#addOltModal" onclick="bukaModalTambahOLT()">
+                            ➕ Tambah OLT
+                        </button>
+                    </div>
+
+                    <!-- Tempat daftar OLT disimpan -->
+                    <div id="daftarOlts" class="row g-3">
+                        <!-- Renders OLT cards here -->
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-          <label for="modalSupabaseTable" class="form-label">Nama Tabel</label>
-          <input type="text" class="form-control" id="modalSupabaseTable" value="ftth_data" placeholder="ftth_data">
+
+    <!-- Supabase Settings Modal -->
+    <div class="modal fade" id="supabaseSettingsModal" tabindex="-1" aria-labelledby="supabaseSettingsModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="supabaseSettingsModalLabel">⚙️ Konfigurasi Supabase</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="modalSupabaseUrl" class="form-label">Supabase URL</label>
+                        <input type="text" class="form-control" id="modalSupabaseUrl"
+                            placeholder="https://xxxx.supabase.co">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalSupabaseAnonKey" class="form-label">Supabase Anon Key</label>
+                        <input type="password" class="form-control" id="modalSupabaseAnonKey"
+                            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalSupabaseTable" class="form-label">Nama Tabel</label>
+                        <input type="text" class="form-control" id="modalSupabaseTable" value="ftth_data"
+                            placeholder="ftth_data">
+                    </div>
+                    <div class="alert alert-info py-2" style="font-size: 13px;">
+                        <strong>Info:</strong> Kredensial ini disimpan di LocalStorage peramban Anda secara lokal dan
+                        aman. Jika dikosongkan, aplikasi kembali menggunakan penyimpanan lokal bawaan.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="simpanConfigSupabase()">Simpan
+                        Pengaturan</button>
+                </div>
+            </div>
         </div>
-        <div class="alert alert-info py-2" style="font-size: 13px;">
-          <strong>Info:</strong> Kredensial ini disimpan di LocalStorage peramban Anda secara lokal dan aman. Jika dikosongkan, aplikasi kembali menggunakan penyimpanan lokal bawaan.
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-        <button type="button" class="btn btn-primary" onclick="simpanConfigSupabase()">Simpan Pengaturan</button>
-      </div>
     </div>
-  </div>
-</div>
 
-<script>
-const SUPABASE_URL = "https://tlwhvpfdixkagsdxeymp.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_tOxtMAecYtBAkl1nKoobVw_nUgPvu-b"; 
-const SUPABASE_TABLE = "ftth_data";
+    <!-- Filter Modal -->
+    <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="filterModalLabel">🎛️ Penyaringan & Urutan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-semibold">MikroTik</label>
+                        <select id="filterMikrotik" class="form-select">
+                            <option value="">Semua MikroTik</option>
+                            <option>CCR1009</option>
+                            <option>RB4011</option>
+                            <option>RB450</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-semibold">OLT</label>
+                        <select id="filterOlt" class="form-select">
+                            <option value="">Semua OLT</option>
+                            <option>HSGQ 8985</option>
+                            <option>HSGQ 8986</option>
+                            <option>HSGQ 8987</option>
+                            <option>HIOSO 8988</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-semibold">Urutkan Berdasarkan</label>
+                        <select id="sortOrder" class="form-select">
+                            <option value="newest">Terbaru (Default)</option>
+                            <option value="oldest">Terlama</option>
+                            <option value="redaman-worst">Redaman Terburuk ↑</option>
+                            <option value="redaman-normal">Redaman Normal ↓</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" onclick="resetFilters()">Reset Filter</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="render()">Terapkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-let supabaseClient = null;
-let data = [];
-let editIndex = -1;
+    <!-- Add/Edit OLT Modal -->
+    <div class="modal fade" id="addOltModal" tabindex="-1" aria-labelledby="addOltModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-dark text-start">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="addOltModalLabel">➕ Tambah Koneksi OLT</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editOltIndex" value="-1">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-semibold">Nama Perangkat OLT</label>
+                        <input id="oltDeviceNama" class="form-control" placeholder="Contoh: OLT Pusat, OLT Cabang A">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-8">
+                            <label class="form-label text-secondary fw-semibold">IP Address / Host OLT</label>
+                            <input id="oltDeviceHost" class="form-control" placeholder="103.194.175.116">
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label text-secondary fw-semibold">Port Telnet</label>
+                            <input id="oltDevicePort" class="form-control" type="number" placeholder="23" value="23">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label text-secondary fw-semibold">Username Telnet</label>
+                            <input id="oltDeviceUser" class="form-control" placeholder="root" value="root">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label text-secondary fw-semibold">Password Telnet</label>
+                            <input id="oltDevicePass" class="form-control" type="password" placeholder="••••" value="admin">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary fw-semibold">Tipe/Merek OLT</label>
+                        <select id="oltDeviceTipe" class="form-select">
+                            <option value="HIOSO">HIOSO (2 Port)</option>
+                            <option value="HSGQ">HSGQ (4 Port)</option>
+                            <option value="ZTE_EPON">ZTE EPON (8 Port)</option>
+                            <option value="ZTE_GPON">ZTE GPON (8 Port)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="simpanOLT()">Simpan Perangkat</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-function getRedamanColor(valStr) {
-    if (!valStr || !valStr.toString().trim()) return 'white';
-    const cleanStr = valStr.toString().trim().toLowerCase();
-    if (cleanStr === 'offline') return 'red';
+    <!-- OLT Telnet Console & Output Modal -->
+    <div class="modal fade" id="oltConsoleModal" tabindex="-1" aria-labelledby="oltConsoleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+            <div class="modal-content text-dark text-start">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="oltConsoleModalLabel">
+                        🔌 Telnet OLT: <span id="activeOltName">-</span>
+                        <span id="activeOltStatusBadge" class="badge bg-secondary fs-6 ms-2">Ready</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <input type="hidden" id="activeOltIndex" value="-1">
+                    
+                    <!-- SaaS Header & Info Summary -->
+                    <div class="row g-3 mb-3 pb-3 border-bottom align-items-center">
+                        <!-- Filters (Left) -->
+                        <div class="col-md-6 d-flex flex-wrap gap-3 align-items-center justify-content-start">
+                            <div>
+                                <span class="text-secondary small fw-semibold d-block mb-1">Filter Port</span>
+                                <select id="oltSaasPortFilter" class="form-select form-select-sm" style="min-width: 150px;" onchange="resetOltPortPagesAndRender()">
+                                    <option value="">Semua Port</option>
+                                </select>
+                            </div>
+                            <div>
+                                <span class="text-secondary small fw-semibold d-block mb-1">Filter Status</span>
+                                <select id="oltSaasStatusFilter" class="form-select form-select-sm" style="min-width: 150px;" onchange="resetOltPortPagesAndRender()">
+                                    <option value="">Semua Status</option>
+                                    <option value="online">Online / Up</option>
+                                    <option value="offline">Offline / Down</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats Card (Right) -->
+                        <div class="col-md-6 d-flex justify-content-md-end justify-content-start">
+                            <div class="card bg-light border border-light-subtle p-2 px-3 shadow-sm rounded-3">
+                                <div class="d-flex gap-4 text-center align-items-center">
+                                    <div>
+                                        <span class="text-secondary small fw-semibold d-block" style="font-size: 11px;">Total ONU</span>
+                                        <span id="oltStatTotal" class="fw-bold fs-5 text-dark">-</span>
+                                    </div>
+                                    <div class="border-start" style="height: 25px; border-color: #cbd5e1 !important;"></div>
+                                    <div>
+                                        <span class="text-secondary small fw-semibold d-block" style="font-size: 11px;">Online</span>
+                                        <span id="oltStatOnline" class="fw-bold fs-5 text-success">-</span>
+                                    </div>
+                                    <div class="border-start" style="height: 25px; border-color: #cbd5e1 !important;"></div>
+                                    <div>
+                                        <span class="text-secondary small fw-semibold d-block" style="font-size: 11px;">Offline</span>
+                                        <span id="oltStatOffline" class="fw-bold fs-5 text-danger">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-    const val = parseFloat(cleanStr);
-    if (isNaN(val)) return 'white';
+                        <!-- Search Box (Underneath for Mobile, full/partial width) -->
+                        <div class="col-12 mt-2">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white border-end-0 rounded-start-pill"><span class="text-muted">🔍</span></span>
+                                <input id="oltSaasSearch" class="form-control border-start-0 rounded-end-pill" type="text" placeholder="Cari nama pelanggan atau MAC Address..." oninput="resetOltPortPagesAndRender()">
+                            </div>
+                        </div>
+                    </div>
 
-    // -23.99 ke atas = hijau
-    if (val >= -23.99) {
-        return 'green';
-    }
-    // -24.00 sampai -24.99 = merah muda
-    else if (val >= -24.99) {
-        return 'deeppink';
-    }
-    // -25.00 sampai -30.00 (dan lebih rendah) = merah
-    else {
-        return 'red';
-    }
-}
+                    <!-- Connection Status Detail Alert Box -->
+                    <div id="activeOltStatusDesc" class="alert alert-secondary py-2 px-3 mb-3 d-none" style="font-size: 13px; border-radius: 10px;"></div>
 
-function getSupabaseConfig() {
-    let url = SUPABASE_URL;
-    let key = SUPABASE_ANON_KEY;
-    let tableName = SUPABASE_TABLE || "ftth_data";
+                    <!-- SaaS Loading Spinner -->
+                    <div id="oltSaasLoadingSpinner" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-secondary small mt-3">Sedang melakukan koneksi Telnet & mengambil data port PON...</p>
+                    </div>
 
-    if (!url || !key || key.includes("MASUKKAN") || key === "") {
-        url = localStorage.getItem("supabaseUrl") || "";
-        key = localStorage.getItem("supabaseAnonKey") || "";
-        tableName = localStorage.getItem("supabaseTable") || "ftth_data";
-    }
-    return { url, key, tableName };
-}
+                    <!-- SaaS Main Container for Port-grouped Tables -->
+                    <div id="oltPortsSaasContainer" class="style-scroll" style="max-height: calc(100vh - 280px); overflow-y: auto;">
+                        <div class="text-center text-muted py-5">
+                            <span class="fs-1 d-block mb-2">🔌</span>
+                            <p class="small m-0">Hubungkan Telnet untuk menampilkan data pelanggan per port PON.</p>
+                        </div>
+                    </div>
 
-function loadConfigValues() {
-    const { url, key, tableName } = getSupabaseConfig();
-    document.getElementById("modalSupabaseUrl").value = url;
-    document.getElementById("modalSupabaseAnonKey").value = key;
-    document.getElementById("modalSupabaseTable").value = tableName;
-}
+                    <!-- Developer Settings & JSON Output (Collapsible) -->
+                    <div class="mt-4 pt-3 border-top">
+                        <button class="btn btn-xs btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center mb-2" style="font-size: 11px;" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOltDeveloperSettings" aria-expanded="false" aria-controls="collapseOltDeveloperSettings">
+                            <span>⚙️ Pengaturan Lanjutan (CLI & API Proxy URL)</span>
+                            <span>▼</span>
+                        </button>
+                        <div class="collapse" id="collapseOltDeveloperSettings">
+                            <div class="card card-body bg-light border-0 p-3 mb-2" style="font-size: 12px; border-radius: 10px;">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-7 text-start">
+                                        <label class="form-label text-secondary fw-semibold">Command CLI OLT</label>
+                                        <input id="activeOltCommand" class="form-control form-control-sm" placeholder="show onu register-info" value="show onu register-info">
+                                    </div>
+                                    <div class="col-md-5 text-start">
+                                        <label class="form-label text-secondary fw-semibold">API Proxy Gateway</label>
+                                        <input id="activeOltProxyUrl" class="form-control form-control-sm" placeholder="http://localhost:3000/api/olt/telnet" value="http://localhost:3000/api/olt/telnet">
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-semibold text-secondary" style="font-size: 11px;">JSON Output Mentah:</span>
+                                    <button class="btn btn-outline-secondary btn-xs py-0 px-2" style="font-size: 10px;" onclick="salinJSONOLTActive()">📋 Salin JSON</button>
+                                </div>
+                                <pre id="activeOltJsonOutput" class="bg-dark text-success p-2 rounded-3 m-0 overflow-auto style-scroll" style="font-family: monospace; font-size: 10px; max-height: 120px; white-space: pre-wrap;">{}</pre>
+                            </div>
+                        </div>
+                    </div>
 
-async function initSupabase() {
-    const { url, key, tableName } = getSupabaseConfig();
-    const statusBadge = document.getElementById("dbStatus");
+                    <!-- Panduan Proxy Node.js -->
+                    <div class="mt-2">
+                        <button class="btn btn-xs btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center" style="font-size: 11px;" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProxyScriptModal" aria-expanded="false" aria-controls="collapseProxyScriptModal">
+                            <span>📄 Petunjuk Koneksi Nyata & Server Proxy Node.js</span>
+                            <span>▼</span>
+                        </button>
+                        <div class="collapse mt-2" id="collapseProxyScriptModal">
+                            <div class="card card-body bg-light text-start text-dark border-0 p-3" style="font-size: 12px; border-radius: 10px;">
+                                <p class="mb-2">Browser dibatasi oleh sandbox keamanan sehingga tidak bisa melakukan koneksi TCP Telnet secara langsung. Langkah koneksi nyata:</p>
+                                <ol class="ps-3 mb-2">
+                                    <li>Instal Node.js di komputer lokal Anda.</li>
+                                    <li>Buat file bernama <code>olt-proxy.js</code> dan salin kode Node.js berikut:</li>
+                                </ol>
+                                <pre class="bg-dark text-light p-2 rounded-3 overflow-auto mb-2" style="font-size: 10px; max-height: 150px;">const express = require('express');
+const { Telnet } = require('telnet-client');
+const cors = require('cors');
+const app = express();
+app.use(cors()); app.use(express.json());
+app.post('/api/olt/telnet', async (req, res) => {
+    const { host, port, username, password, command, tipe } = req.body;
+    const connection = new Telnet();
+    const params = { host, port: port || 23, shellPrompt: '>', timeout: 5000, username, password, loginPrompt: 'login: ', passwordPrompt: 'password: ' };
+    try {
+        await connection.connect(params);
+        try { await connection.exec('enable'); } catch(e) {}
+        
+        const groupedOnu = {};
+        const maxPorts = tipe === 'HIOSO' ? 2 : 4; // HIOSO 2 port, HSGQ 4 port
 
-    if (url && key && !key.includes("MASUKKAN") && key !== "") {
-        try {
-
-            supabaseClient = window.supabase.createClient(url, key);
+        for (let p = 1; p <= maxPorts; p++) {
+            const portName = `PON ${p}`;
+            groupedOnu[portName] = [];
             
-            // Test connection by fetching 1 row
-            const { data: testData, error } = await supabaseClient.from(tableName).select('id').limit(1);
-            if (error) throw error;
+            let cmdToRun = command;
+            if (!command || command === 'show onu register-info') {
+                cmdToRun = tipe === 'HIOSO' ? `show onu register epon 0/${p}` : `show onu register-info epon 0/${p}`;
+            } else {
+                cmdToRun = `${command} epon 0/${p}`;
+            }
+
+            try {
+                let resCmd = await connection.exec(cmdToRun);
+                const lines = resCmd.split('\n');
+                lines.forEach(line => {
+                    if (line.includes('MAC') || line.match(/([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}/)) {
+                        const macMatch = line.match(/([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}/);
+                        const status = line.toLowerCase().includes('online') || line.toLowerCase().includes('up') ? 'Online' : 'Offline';
+                        const redamanMatch = line.match(/-\d+(\.\d+)?/);
+                        groupedOnu[portName].push({
+                            onu_index: groupedOnu[portName].length + 1,
+                            mac_address: macMatch ? macMatch[0] : 'unknown',
+                            status: status,
+                            redaman: redamanMatch ? redamanMatch[0] + ' dBm' : 'Offline',
+                            status_terakhir: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                        });
+                    }
+                });
+            } catch (errPort) {
+                console.error('Error port ' + p + ':', errPort.message);
+            }
+        }
+        await connection.destroy();
+        res.json({ success: true, parsed: groupedOnu });
+    } catch (error) { res.status(500).json({ success: false, error: error.message }); }
+});
+app.listen(3000, () => console.log('OLT Proxy server running on port 3000'));</pre>
+                                <ol class="ps-3 mb-0" start="3">
+                                    <li>Jalankan <code>npm install express telnet-client cors</code> lalu <code>node olt-proxy.js</code>.</li>
+                                    <li>Masukkan alamat proxy <code>http://localhost:3000/api/olt/telnet</code> ke dalam input <strong>API Proxy Gateway</strong> di atas.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://tlwhvpfdixkagsdxeymp.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_tOxtMAecYtBAkl1nKoobVw_nUgPvu-b";
+        const SUPABASE_TABLE = "ftth_data";
+
+        let supabaseClient = null;
+        let data = [];
+        let editIndex = -1;
+
+        function getRedamanColor(valStr) {
+            if (!valStr || !valStr.toString().trim()) return 'white';
+            const cleanStr = valStr.toString().trim().toLowerCase();
+            if (cleanStr === 'offline') return 'red';
+
+            const val = parseFloat(cleanStr);
+            if (isNaN(val)) return 'white';
+
+            // -23.99 ke atas = hijau
+            if (val >= -23.99) {
+                return 'green';
+            }
+            // -24.00 sampai -24.99 = merah muda
+            else if (val >= -24.99) {
+                return 'deeppink';
+            }
+            // -25.00 sampai -30.00 (dan lebih rendah) = merah
+            else {
+                return 'red';
+            }
+        }
+
+        function getSupabaseConfig() {
+            let url = SUPABASE_URL;
+            let key = SUPABASE_ANON_KEY;
+            let tableName = SUPABASE_TABLE || "ftth_data";
+
+            if (!url || !key || key.includes("MASUKKAN") || key === "") {
+                url = localStorage.getItem("supabaseUrl") || "";
+                key = localStorage.getItem("supabaseAnonKey") || "";
+                tableName = localStorage.getItem("supabaseTable") || "ftth_data";
+            }
+            return { url, key, tableName };
+        }
+
+        function loadConfigValues() {
+            const { url, key, tableName } = getSupabaseConfig();
+            document.getElementById("modalSupabaseUrl").value = url;
+            document.getElementById("modalSupabaseAnonKey").value = key;
+            document.getElementById("modalSupabaseTable").value = tableName;
+        }
+
+        async function initSupabase() {
+            const { url, key, tableName } = getSupabaseConfig();
+            const statusBadge = document.getElementById("dbStatus");
+
+            if (url && key && !key.includes("MASUKKAN") && key !== "") {
+                try {
+
+                    supabaseClient = window.supabase.createClient(url, key);
+
+                    // Test connection by fetching 1 row
+                    const { data: testData, error } = await supabaseClient.from(tableName).select('id').limit(1);
+                    if (error) throw error;
+
+                    statusBadge.innerText = "Supabase Connected";
+                    statusBadge.className = "badge bg-success fs-6";
+                    return true;
+                } catch (err) {
+                    console.error("Supabase connection failed:", err);
+                    statusBadge.innerText = "Supabase Connection Error";
+                    statusBadge.className = "badge bg-danger fs-6";
+                    supabaseClient = null;
+                    return false;
+                }
+            } else {
+                statusBadge.innerText = "LocalStorage Mode";
+                statusBadge.className = "badge bg-secondary fs-6";
+                supabaseClient = null;
+                return false;
+            }
+        }
+
+        async function loadData() {
+            const isSupabase = await initSupabase();
+            if (isSupabase) {
+                try {
+                    const { tableName } = getSupabaseConfig();
+                    const { data: dbData, error } = await supabaseClient
+                        .from(tableName)
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    if (error) throw error;
+                    data = dbData || [];
+                } catch (err) {
+                    alert("Gagal memuat data dari Supabase: " + err.message);
+                    data = JSON.parse(localStorage.getItem("ftthData") || "[]");
+                }
+            } else {
+                data = JSON.parse(localStorage.getItem("ftthData") || "[]");
+            }
+            render();
+        }
+
+        async function simpanConfigSupabase() {
+            const url = document.getElementById("modalSupabaseUrl").value.trim();
+            const key = document.getElementById("modalSupabaseAnonKey").value.trim();
+            const table = document.getElementById("modalSupabaseTable").value.trim() || "ftth_data";
+
+            if (url === SUPABASE_URL || !url) {
+                localStorage.removeItem("supabaseUrl");
+            } else {
+                localStorage.setItem("supabaseUrl", url);
+            }
+
+            if (key === SUPABASE_ANON_KEY || !key) {
+                localStorage.removeItem("supabaseAnonKey");
+            } else {
+                localStorage.setItem("supabaseAnonKey", key);
+            }
+
+            if (table === SUPABASE_TABLE) {
+                localStorage.removeItem("supabaseTable");
+            } else {
+                localStorage.setItem("supabaseTable", table);
+            }
+
+
+            const modalEl = document.getElementById('supabaseSettingsModal');
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.hide();
+
+            // Reload
+            await loadData();
+        }
+
+        function resetFilters() {
+            document.getElementById("filterMikrotik").value = "";
+            document.getElementById("filterOlt").value = "";
+            document.getElementById("sortOrder").value = "newest";
             
-            statusBadge.innerText = "Supabase Connected";
-            statusBadge.className = "badge bg-success fs-6";
-            return true;
-        } catch (err) {
-            console.error("Supabase connection failed:", err);
-            statusBadge.innerText = "Supabase Connection Error";
-            statusBadge.className = "badge bg-danger fs-6";
-            supabaseClient = null;
-            return false;
+            const modalEl = document.getElementById('filterModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            
+            render();
         }
-    } else {
-        statusBadge.innerText = "LocalStorage Mode";
-        statusBadge.className = "badge bg-secondary fs-6";
-        supabaseClient = null;
-        return false;
-    }
-}
 
-async function loadData() {
-    const isSupabase = await initSupabase();
-    if (isSupabase) {
-        try {
-            const { tableName } = getSupabaseConfig();
-            const { data: dbData, error } = await supabaseClient
-                .from(tableName)
-                .select('*')
-                .order('created_at', { ascending: false });
-            if (error) throw error;
-            data = dbData || [];
-        } catch (err) {
-            alert("Gagal memuat data dari Supabase: " + err.message);
-            data = JSON.parse(localStorage.getItem("ftthData") || "[]");
-        }
-    } else {
-        data = JSON.parse(localStorage.getItem("ftthData") || "[]");
-    }
-    render();
-}
+        function render() {
+            const tb = document.getElementById("tb");
+            let rows = "";
+            const box = document.getElementById("hasilCepat");
+            const keyword = (document.getElementById("cariPelanggan")?.value || "").toLowerCase().trim();
+            const filterMikrotik = document.getElementById("filterMikrotik")?.value || "";
+            const filterOlt = document.getElementById("filterOlt")?.value || "";
+            const sortOrder = document.getElementById("sortOrder")?.value || "newest";
+            
+            const getRedamanNum = (valStr) => {
+                if (!valStr || !valStr.toString().trim()) return -999;
+                const cleanStr = valStr.toString().trim().toLowerCase();
+                if (cleanStr === 'offline') return -999;
+                const val = parseFloat(cleanStr);
+                return isNaN(val) ? -999 : val;
+            };
 
-async function simpanConfigSupabase() {
-    const url = document.getElementById("modalSupabaseUrl").value.trim();
-    const key = document.getElementById("modalSupabaseAnonKey").value.trim();
-    const table = document.getElementById("modalSupabaseTable").value.trim() || "ftth_data";
+            let total = 0;
+            let cards = "";
 
-    if (url === SUPABASE_URL || !url) {
-        localStorage.removeItem("supabaseUrl");
-    } else {
-        localStorage.setItem("supabaseUrl", url);
-    }
+            // Map data untuk melacak index asli (originalIndex) saat memfilter dan mengurutkan
+            let itemsWithIndex = data.map((d, index) => ({ item: d, originalIndex: index }));
 
-    if (key === SUPABASE_ANON_KEY || !key) {
-        localStorage.removeItem("supabaseAnonKey");
-    } else {
-        localStorage.setItem("supabaseAnonKey", key);
-    }
+            // 1. Proses Filter
+            let processed = itemsWithIndex.filter(wrapper => {
+                const d = wrapper.item;
+                
+                // Filter pencarian kata kunci
+                if (keyword) {
+                    const txt = ((d.redaman || "") + " " + (d.pelanggan || "") + " " + (d.nama_modem || "") + " " + (d.nomor_odp || "") + " " + (d.olt || "") + " " + (d.pon || "") + " " + (d.mikrotik || "") + " " + (d.port_odp || "")).toLowerCase();
+                    if (!txt.includes(keyword)) return false;
+                }
+                
+                // Filter MikroTik
+                if (filterMikrotik && d.mikrotik !== filterMikrotik) return false;
+                
+                // Filter OLT
+                if (filterOlt && d.olt !== filterOlt) return false;
+                
+                return true;
+            });
 
-    if (table === SUPABASE_TABLE) {
-        localStorage.removeItem("supabaseTable");
-    } else {
-        localStorage.setItem("supabaseTable", table);
-    }
+            // 2. Proses Urutkan (Sorting)
+            processed.sort((a, b) => {
+                if (sortOrder === "redaman-worst") {
+                    // Redaman Terburuk: paling negatif (kecil) di awal (termasuk offline/-999)
+                    return getRedamanNum(a.item.redaman) - getRedamanNum(b.item.redaman);
+                } else if (sortOrder === "redaman-normal") {
+                    // Redaman Normal: paling mendekati 0 (besar) di awal, offline/-999 di akhir
+                    return getRedamanNum(b.item.redaman) - getRedamanNum(a.item.redaman);
+                } else if (sortOrder === "oldest") {
+                    const dateA = a.item.created_at ? new Date(a.item.created_at) : new Date(0);
+                    const dateB = b.item.created_at ? new Date(b.item.created_at) : new Date(0);
+                    if (a.item.created_at && b.item.created_at) {
+                        return dateA - dateB;
+                    }
+                    return a.originalIndex - b.originalIndex;
+                } else { // newest (Default)
+                    const dateA = a.item.created_at ? new Date(a.item.created_at) : new Date(0);
+                    const dateB = b.item.created_at ? new Date(b.item.created_at) : new Date(0);
+                    if (a.item.created_at && b.item.created_at) {
+                        return dateB - dateA;
+                    }
+                    return b.originalIndex - a.originalIndex;
+                }
+            });
 
+            // 3. Render HTML
+            processed.forEach((wrapper) => {
+                const d = wrapper.item;
+                const i = wrapper.originalIndex;
+                total++;
 
-    const modalEl = document.getElementById('supabaseSettingsModal');
-    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-    modal.hide();
+                const bg = getRedamanColor(d.redaman);
+                const fg = (bg === "white") ? "#000" : "#fff";
 
-    // Reload
-    await loadData();
-}
-
-function render(){
-const tb=document.getElementById("tb");
-let rows="";
-const box=document.getElementById("hasilCepat");
-const keyword=(document.getElementById("cariPelanggan")?.value||"").toLowerCase().trim();
-let total=0;
-let cards="";
-
-data.forEach((d,i)=>{
- const txt=((d.redaman||"")+" "+(d.pelanggan||"")+" "+(d.nama_modem||"")+" "+(d.nomor_odp||"")+" "+(d.olt||"")+" "+(d.pon||"")+" "+(d.mikrotik||"")+" "+(d.port_odp||"")).toLowerCase();
- if(keyword && !txt.includes(keyword)) return;
- total++;
-
- const bg=getRedamanColor(d.redaman);
- const fg=(bg==="white")?"#000":"#fff";
-
- cards+=`<div class="hasil-card">
+                cards += `<div class="hasil-card">
  <div class="hasil-nama">👤 ${d.pelanggan}</div>
 
- <div style="margin-top:6px;">📡 <b>${d.nama_modem||"-"}</b></div>
+ <div style="margin-top:6px;">📡 <b>${d.nama_modem || "-"}</b></div>
 
  <div style="margin-top:4px;">
  📍 Koordinat:
- ${d.koordinat?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>`:"-"}
+ ${d.koordinat ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>` : "-"}
  </div>
 
  <div style="margin-top:2px;">
- 📦 ODP: <b>${d.nomor_odp||"-"}</b> | Port: <b>${d.port_odp||"-"}</b>
+ 📦 ODP: <b>${d.nomor_odp || "-"}</b> | Port: <b>${d.port_odp || "-"}</b>
  </div>
 
  <div style="margin-top:2px;">
- 🌐 VLAN/PON: <b>${d.pon||"-"}</b>
+ 🌐 VLAN/PON: <b>${d.pon || "-"}</b>
  </div>
 
- <div class="hasil-red" style="background:${bg};color:${fg};margin-top:10px">📶 ${d.redaman||"-"}</div>
+ <div class="hasil-red" style="background:${bg};color:${fg};margin-top:10px">📶 ${d.redaman || "-"}</div>
   <div style="margin-top:9px;display:flex;gap:8px;">
    <button class="btn btn-warning btn-sm flex-fill" onclick="editData(${i})">✏️ Edit</button>
    <button class="btn btn-danger btn-sm flex-fill" onclick="hapusData(${i})">🗑️ Hapus</button>
- </div>
-</div>`;
+  </div>
+ </div>`;
 
- rows+=`<tr>
-<td>${d.pelanggan}</td>
-<td>${d.nama_modem||''}</td>
-<td>${d.koordinat?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>`:''}</td>
-<td>${d.olt}</td><td>${d.pon}</td><td>${d.mikrotik||""}</td>
-<td>${d.nomor_odp}</td><td>${d.port_odp}</td>
-<td style="font-weight:bold;color:${fg};background:${bg}">${d.redaman||""}</td>
-<td><button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button><button class='btn btn-danger btn-sm' onclick='hapusData(${i})'>Hapus</button></td>
-</tr>`;
-});
+                rows += `<tr>
+ <td>${d.pelanggan}</td>
+ <td>${d.nama_modem || ''}</td>
+ <td>${d.koordinat ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.koordinat)}" target="_blank">${d.koordinat}</a>` : ''}</td>
+ <td>${d.olt}</td><td>${d.pon}</td><td>${d.mikrotik || ""}</td>
+ <td>${d.nomor_odp}</td><td>${d.port_odp}</td>
+ <td style="font-weight:bold;color:${fg};background:${bg}">${d.redaman || ""}</td>
+ <td><button class='btn btn-warning btn-sm me-1' onclick='editData(${i})'>Edit</button><button class='btn btn-danger btn-sm' onclick='hapusData(${i})'>Hapus</button></td>
+ </tr>`;
+            });
 
-document.getElementById("jumlahPencarian").innerText=total;
-document.getElementById("boxJumlahPencarian").style.display=keyword?"block":"none";
-if(keyword && total){
- box.style.display="block";
- box.innerHTML=cards;
-}else{
- box.style.display="none";
- box.innerHTML="";
-}
-}
+            document.getElementById("tb").innerHTML = rows;
+            document.getElementById("jumlahPencarian").innerText = total;
 
-function ambilKoordinat(){
-    const input = document.getElementById("koordinat");
-
-    if (!navigator.geolocation) {
-        alert("Browser Anda tidak mendukung fitur lokasi/GPS.");
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-        function(position) {
-            const lat = position.coords.latitude.toFixed(6);
-            const lng = position.coords.longitude.toFixed(6);
-            input.value = lat + ", " + lng;
-        },
-        function(error) {
-            let pesan = "Gagal mengambil koordinat.";
-            if (error.code === error.PERMISSION_DENIED) {
-                pesan = "Izin lokasi ditolak. Silakan izinkan akses lokasi pada browser.";
-            } else if (error.code === error.POSITION_UNAVAILABLE) {
-                pesan = "Lokasi tidak tersedia.";
-            } else if (error.code === error.TIMEOUT) {
-                pesan = "Waktu pengambilan lokasi habis. Silakan coba lagi.";
-            }
-            alert(pesan);
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-        }
-    );
-}
-
-async function simpan(){
-    const pelangganInput = document.getElementById("pelanggan");
-    const modemInput = document.getElementById("nama_modem");
-    const koordinatInput = document.getElementById("koordinat");
-    const oltInput = document.getElementById("olt");
-    const ponInput = document.getElementById("pon");
-    const mikrotikInput = document.getElementById("mikrotik");
-    const nomorOdpInput = document.getElementById("nomor_odp");
-    const portOdpInput = document.getElementById("port_odp");
-    const redamanInput = document.getElementById("redaman");
-    const btnSimpan = document.getElementById("btnSimpan");
-
-    const namaPelanggan = pelangganInput.value.trim();
-
-    // Cegah nama pelanggan ganda
-    const duplikat = data.findIndex((d, idx) =>
-        idx !== editIndex &&
-        (d.pelanggan || "").trim().toLowerCase() === namaPelanggan.toLowerCase()
-    );
-
-    if (duplikat !== -1) {
-        alert("Nama pelanggan sudah ada! Gunakan nama yang berbeda.");
-        pelangganInput.focus();
-        return;
-    }
-
-    const item={
-        pelanggan: namaPelanggan,
-        nama_modem: modemInput.value,
-        koordinat: koordinatInput.value,
-        olt: oltInput.value,
-        pon: ponInput.value,
-        mikrotik: mikrotikInput.value,
-        nomor_odp: nomorOdpInput.value,
-        port_odp: portOdpInput.value,
-        redaman: redamanInput.value
-    };
-
-    if (supabaseClient) {
-        try {
-            const { tableName } = getSupabaseConfig();
-            if (editIndex == -1) {
-                const { error } = await supabaseClient.from(tableName).insert([item]);
-                if (error) throw error;
+            const isFilterActive = keyword || filterMikrotik || filterOlt;
+            document.getElementById("boxJumlahPencarian").style.display = isFilterActive ? "block" : "none";
+            
+            // Tampilkan list card hanya jika ada pencarian/filter aktif
+            if (isFilterActive) {
+                if (total > 0) {
+                    box.style.display = "block";
+                    box.innerHTML = cards;
+                } else {
+                    box.style.display = "block";
+                    box.innerHTML = `<div class="alert alert-warning text-center rounded-3 p-3 m-0">Tidak ada data pelanggan ditemukan.</div>`;
+                }
             } else {
-                const originalItem = data[editIndex];
-                if (originalItem.id) {
-                    const { error } = await supabaseClient.from(tableName).update(item).eq('id', originalItem.id);
-                    if (error) throw error;
-                } else {
-                    alert("Data tidak memiliki ID Supabase, tidak bisa di-update.");
-                    return;
-                }
-                editIndex = -1;
-                btnSimpan.innerText = "Simpan";
+                box.style.display = "none";
+                box.innerHTML = "";
             }
-        } catch (err) {
-            alert("Gagal menyimpan ke Supabase: " + err.message);
-            return;
-        }
-    } else {
 
-        if (editIndex == -1) {
-            data.push(item);
-        } else {
-            data[editIndex] = item;
-            editIndex = -1;
-            btnSimpan.innerText = "Simpan";
-        }
-        localStorage.setItem("ftthData", JSON.stringify(data));
-    }
-
-    await loadData();
-
-    pelangganInput.value = "";
-    modemInput.value = "";
-    koordinatInput.value = "";
-    oltInput.value = "";
-    ponInput.value = "";
-    mikrotikInput.value = "";
-    nomorOdpInput.value = "";
-    portOdpInput.value = "";
-    redamanInput.value = "";
-}
-
-function editData(i){
-    const d=data[i];
-    document.getElementById("pelanggan").value=d.pelanggan;
-    document.getElementById("nama_modem").value=d.nama_modem || '';
-    document.getElementById("koordinat").value=d.koordinat;
-    document.getElementById("olt").value=d.olt;
-    document.getElementById("pon").value=d.pon;
-    document.getElementById("mikrotik").value=d.mikrotik || "";
-    document.getElementById("nomor_odp").value=d.nomor_odp;
-    document.getElementById("port_odp").value=d.port_odp;
-    document.getElementById("redaman").value=d.redaman;
-    
-    editIndex=i;
-    document.getElementById("btnSimpan").innerText="Update";
-}
-
-async function hapusData(i){
-    if(confirm("Hapus data ini?")){
-        const item = data[i];
-        if (supabaseClient) {
-            try {
-                const { tableName } = getSupabaseConfig();
-                if (item.id) {
-                    const { error } = await supabaseClient.from(tableName).delete().eq('id', item.id);
-                    if (error) throw error;
+            // Update filter button text & style
+            const filterBtn = document.getElementById("btnFilterOpen");
+            if (filterBtn) {
+                if (filterMikrotik || filterOlt || sortOrder !== "newest") {
+                    filterBtn.className = "btn btn-primary d-flex align-items-center gap-1 px-3";
+                    filterBtn.innerHTML = "🎛️ (Aktif)";
                 } else {
-                    alert("Data tidak memiliki ID Supabase, tidak bisa dihapus di database.");
-                    return;
+                    filterBtn.className = "btn btn-outline-secondary d-flex align-items-center gap-1 px-3";
+                    filterBtn.innerHTML = "🎛️";
                 }
-            } catch (err) {
-                alert("Gagal menghapus dari Supabase: " + err.message);
+            }
+        }
+
+        function ambilKoordinat() {
+            const input = document.getElementById("koordinat");
+
+            if (!navigator.geolocation) {
+                alert("Browser Anda tidak mendukung fitur lokasi/GPS.");
                 return;
             }
-        } else {
-            data.splice(i,1);
-            localStorage.setItem("ftthData",JSON.stringify(data));
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    const lat = position.coords.latitude.toFixed(6);
+                    const lng = position.coords.longitude.toFixed(6);
+                    input.value = lat + ", " + lng;
+                },
+                function (error) {
+                    let pesan = "Gagal mengambil koordinat.";
+                    if (error.code === error.PERMISSION_DENIED) {
+                        pesan = "Izin lokasi ditolak. Silakan izinkan akses lokasi pada browser.";
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        pesan = "Lokasi tidak tersedia.";
+                    } else if (error.code === error.TIMEOUT) {
+                        pesan = "Waktu pengambilan lokasi habis. Silakan coba lagi.";
+                    }
+                    alert(pesan);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+            );
         }
-        await loadData();
-    }
-}
 
-function exportExcel(){
-    const excelData = data.map(d=>({
-        "Nama Pelanggan": d.pelanggan,
-        "Nama Modem": d.nama_modem || "",
-        "Koordinat": d.koordinat,
-        "OLT": d.olt,
-        "PON": d.pon,
-        "MikroTik": d.mikrotik || "",
-        "Nama ODP": d.nomor_odp,
-        "Port ODP": d.port_odp,
-        "Redaman": d.redaman
-    }));
+        async function simpan() {
+            const pelangganInput = document.getElementById("pelanggan");
+            const modemInput = document.getElementById("nama_modem");
+            const koordinatInput = document.getElementById("koordinat");
+            const oltInput = document.getElementById("olt");
+            const ponInput = document.getElementById("pon");
+            const mikrotikInput = document.getElementById("mikrotik");
+            const nomorOdpInput = document.getElementById("nomor_odp");
+            const portOdpInput = document.getElementById("port_odp");
+            const redamanInput = document.getElementById("redaman");
+            const btnSimpan = document.getElementById("btnSimpan");
 
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
+            const namaPelanggan = pelangganInput.value.trim();
 
-    XLSX.utils.book_append_sheet(wb, ws, "FTTH");
-    XLSX.writeFile(wb, "FTTH_Data.xlsx");
-}
+            // Cegah nama pelanggan ganda
+            const duplikat = data.findIndex((d, idx) =>
+                idx !== editIndex &&
+                (d.pelanggan || "").trim().toLowerCase() === namaPelanggan.toLowerCase()
+            );
 
-function exportPDF(){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.text("FTTH",14,15);
-
-    doc.autoTable({
-        startY:20,
-        styles:{
-            fontSize:6,
-            cellPadding:1
-        },
-        headStyles:{
-            fontSize:7
-        },
-        head:[[
-            "Nama Pelanggan",
-            "Nama Modem",
-            "Koordinat",
-            "OLT",
-            "PON",
-            "MikroTik",
-            "Nama ODP",
-            "Port",
-            "Redaman"
-        ]],
-
-        body:data.map(d=>[
-            d.pelanggan,
-            d.nama_modem || "",
-            d.koordinat,
-            d.olt,
-            d.pon,
-            d.mikrotik || "",
-            d.nomor_odp,
-            d.port_odp,
-            d.redaman
-        ]),
-
-        didParseCell: function(dataCell){
-            if(dataCell.section === 'body' && dataCell.column.index === 8){
-                const redamanStr = dataCell.cell.raw;
-                const color = getRedamanColor(redamanStr);
-                if(color === 'red'){
-                    dataCell.cell.styles.textColor = [255,0,0];
-                    dataCell.cell.styles.fontStyle = 'bold';
-                }
-                else if(color === 'green'){
-                    dataCell.cell.styles.textColor = [0,128,0];
-                    dataCell.cell.styles.fontStyle = 'bold';
-                }
-                else if(color === 'deeppink'){
-                    dataCell.cell.styles.textColor = [255,20,147];
-                    dataCell.cell.styles.fontStyle = 'bold';
-                } else {
-                    dataCell.cell.styles.textColor = [0,0,0]; // default black
-                }
-            }
-        }
-    });
-
-    doc.save("FTTH_Data.pdf");
-}
-
-async function importExcel(event){
-    const file = event.target.files[0];
-    if(!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = async function(e){
-        const workbook = XLSX.read(e.target.result,{type:'binary'});
-        const sheetName = workbook.SheetNames[0];
-        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-        const newItems = rows.map(r=>({
-            pelanggan: r["Nama Pelanggan"] !== undefined ? String(r["Nama Pelanggan"]) : "",
-            nama_modem: r["Nama Modem"] !== undefined ? String(r["Nama Modem"]) : "",
-            koordinat: r["Koordinat"] !== undefined ? String(r["Koordinat"]) : "",
-            olt: r["OLT"] !== undefined ? String(r["OLT"]) : "",
-            pon: r["PON"] !== undefined ? String(r["PON"]) : "",
-            mikrotik: r["MikroTik"] !== undefined ? String(r["MikroTik"]) : "",
-            nomor_odp: r["Nama ODP"] !== undefined ? String(r["Nama ODP"]) : "",
-            port_odp: r["Port ODP"] !== undefined ? String(r["Port ODP"]) : "",
-            redaman: r["Redaman"] !== undefined ? String(r["Redaman"]) : ""
-        }));
-
-        if (supabaseClient) {
-            try {
-                const { tableName } = getSupabaseConfig();
-                const { error } = await supabaseClient.from(tableName).insert(newItems);
-                if (error) throw error;
-                alert("Import Excel berhasil ke Supabase");
-            } catch (err) {
-                alert("Gagal mengimpor ke Supabase: " + err.message);
+            if (duplikat !== -1) {
+                alert("Nama pelanggan sudah ada! Gunakan nama yang berbeda.");
+                pelangganInput.focus();
                 return;
             }
-        } else {
-            data.push(...newItems);
-            localStorage.setItem("ftthData",JSON.stringify(data));
-            alert("Import Excel berhasil ke LocalStorage");
+
+            const item = {
+                pelanggan: namaPelanggan,
+                nama_modem: modemInput.value,
+                koordinat: koordinatInput.value,
+                olt: oltInput.value,
+                pon: ponInput.value,
+                mikrotik: mikrotikInput.value,
+                nomor_odp: nomorOdpInput.value,
+                port_odp: portOdpInput.value,
+                redaman: redamanInput.value
+            };
+
+            if (supabaseClient) {
+                try {
+                    const { tableName } = getSupabaseConfig();
+                    if (editIndex == -1) {
+                        const { error } = await supabaseClient.from(tableName).insert([item]);
+                        if (error) throw error;
+                    } else {
+                        const originalItem = data[editIndex];
+                        if (originalItem.id) {
+                            const { error } = await supabaseClient.from(tableName).update(item).eq('id', originalItem.id);
+                            if (error) throw error;
+                        } else {
+                            alert("Data tidak memiliki ID Supabase, tidak bisa di-update.");
+                            return;
+                        }
+                        editIndex = -1;
+                        btnSimpan.innerText = "Simpan";
+                    }
+                } catch (err) {
+                    alert("Gagal menyimpan ke Supabase: " + err.message);
+                    return;
+                }
+            } else {
+
+                if (editIndex == -1) {
+                    data.push(item);
+                } else {
+                    data[editIndex] = item;
+                    editIndex = -1;
+                    btnSimpan.innerText = "Simpan";
+                }
+                localStorage.setItem("ftthData", JSON.stringify(data));
+            }
+
+            await loadData();
+
+            pelangganInput.value = "";
+            modemInput.value = "";
+            koordinatInput.value = "";
+            oltInput.value = "";
+            ponInput.value = "";
+            mikrotikInput.value = "";
+            nomorOdpInput.value = "";
+            portOdpInput.value = "";
+            redamanInput.value = "";
+
+            // Pindah kembali ke tab List Pelanggan setelah menyimpan/memperbarui
+            const listTabEl = document.getElementById('list-tab');
+            if (listTabEl) {
+                const tab = bootstrap.Tab.getOrCreateInstance(listTabEl);
+                tab.show();
+            }
         }
 
-        await loadData();
-    };
+        function editData(i) {
+            const d = data[i];
+            document.getElementById("pelanggan").value = d.pelanggan;
+            document.getElementById("nama_modem").value = d.nama_modem || '';
+            document.getElementById("koordinat").value = d.koordinat;
+            document.getElementById("olt").value = d.olt;
+            document.getElementById("pon").value = d.pon;
+            document.getElementById("mikrotik").value = d.mikrotik || "";
+            document.getElementById("nomor_odp").value = d.nomor_odp;
+            document.getElementById("port_odp").value = d.port_odp;
+            document.getElementById("redaman").value = d.redaman;
 
-    reader.readAsBinaryString(file);
-}
+            editIndex = i;
+            document.getElementById("btnSimpan").innerText = "Update";
 
+            // Pindah ke tab "Tambah Pelanggan" secara otomatis saat edit diklik
+            const tabEl = document.getElementById('tambah-tab');
+            if (tabEl) {
+                const tab = bootstrap.Tab.getOrCreateInstance(tabEl);
+                tab.show();
+            }
+        }
 
-// Optimasi pencarian (debounce)
-let searchDelay;
-document.addEventListener("DOMContentLoaded",()=>{
-  const cari=document.getElementById("cariPelanggan");
-  if(cari){
-    cari.addEventListener("input",()=>{
-      clearTimeout(searchDelay);
-      searchDelay=setTimeout(render,250);
-    });
-  }
-});
+        async function hapusData(i) {
+            if (confirm("Hapus data ini?")) {
+                const item = data[i];
+                if (supabaseClient) {
+                    try {
+                        const { tableName } = getSupabaseConfig();
+                        if (item.id) {
+                            const { error } = await supabaseClient.from(tableName).delete().eq('id', item.id);
+                            if (error) throw error;
+                        } else {
+                            alert("Data tidak memiliki ID Supabase, tidak bisa dihapus di database.");
+                            return;
+                        }
+                    } catch (err) {
+                        alert("Gagal menghapus dari Supabase: " + err.message);
+                        return;
+                    }
+                } else {
+                    data.splice(i, 1);
+                    localStorage.setItem("ftthData", JSON.stringify(data));
+                }
+                await loadData();
+            }
+        }
 
-// Initialization on startup
-loadConfigValues();
-loadData();
-</script>
+        function exportExcel() {
+            const excelData = data.map(d => ({
+                "Nama Pelanggan": d.pelanggan,
+                "Nama Modem": d.nama_modem || "",
+                "Koordinat": d.koordinat,
+                "OLT": d.olt,
+                "PON": d.pon,
+                "MikroTik": d.mikrotik || "",
+                "Nama ODP": d.nomor_odp,
+                "Port ODP": d.port_odp,
+                "Redaman": d.redaman
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+
+            XLSX.utils.book_append_sheet(wb, ws, "FTTH");
+            XLSX.writeFile(wb, "FTTH_Data.xlsx");
+        }
+
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.text("FTTH", 14, 15);
+
+            doc.autoTable({
+                startY: 20,
+                styles: {
+                    fontSize: 6,
+                    cellPadding: 1
+                },
+                headStyles: {
+                    fontSize: 7
+                },
+                head: [[
+                    "Nama Pelanggan",
+                    "Nama Modem",
+                    "Koordinat",
+                    "OLT",
+                    "PON",
+                    "MikroTik",
+                    "Nama ODP",
+                    "Port",
+                    "Redaman"
+                ]],
+
+                body: data.map(d => [
+                    d.pelanggan,
+                    d.nama_modem || "",
+                    d.koordinat,
+                    d.olt,
+                    d.pon,
+                    d.mikrotik || "",
+                    d.nomor_odp,
+                    d.port_odp,
+                    d.redaman
+                ]),
+
+                didParseCell: function (dataCell) {
+                    if (dataCell.section === 'body' && dataCell.column.index === 8) {
+                        const redamanStr = dataCell.cell.raw;
+                        const color = getRedamanColor(redamanStr);
+                        if (color === 'red') {
+                            dataCell.cell.styles.textColor = [255, 0, 0];
+                            dataCell.cell.styles.fontStyle = 'bold';
+                        }
+                        else if (color === 'green') {
+                            dataCell.cell.styles.textColor = [0, 128, 0];
+                            dataCell.cell.styles.fontStyle = 'bold';
+                        }
+                        else if (color === 'deeppink') {
+                            dataCell.cell.styles.textColor = [255, 20, 147];
+                            dataCell.cell.styles.fontStyle = 'bold';
+                        } else {
+                            dataCell.cell.styles.textColor = [0, 0, 0]; // default black
+                        }
+                    }
+                }
+            });
+
+            doc.save("FTTH_Data.pdf");
+        }
+
+        async function importExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+
+            reader.onload = async function (e) {
+                const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                const sheetName = workbook.SheetNames[0];
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+                const newItems = rows.map(r => ({
+                    pelanggan: r["Nama Pelanggan"] !== undefined ? String(r["Nama Pelanggan"]) : "",
+                    nama_modem: r["Nama Modem"] !== undefined ? String(r["Nama Modem"]) : "",
+                    koordinat: r["Koordinat"] !== undefined ? String(r["Koordinat"]) : "",
+                    olt: r["OLT"] !== undefined ? String(r["OLT"]) : "",
+                    pon: r["PON"] !== undefined ? String(r["PON"]) : "",
+                    mikrotik: r["MikroTik"] !== undefined ? String(r["MikroTik"]) : "",
+                    nomor_odp: r["Nama ODP"] !== undefined ? String(r["Nama ODP"]) : "",
+                    port_odp: r["Port ODP"] !== undefined ? String(r["Port ODP"]) : "",
+                    redaman: r["Redaman"] !== undefined ? String(r["Redaman"]) : ""
+                }));
+
+                if (supabaseClient) {
+                    try {
+                        const { tableName } = getSupabaseConfig();
+                        const { error } = await supabaseClient.from(tableName).insert(newItems);
+                        if (error) throw error;
+                        alert("Import Excel berhasil ke Supabase");
+                    } catch (err) {
+                        alert("Gagal mengimpor ke Supabase: " + err.message);
+                        return;
+                    }
+                } else {
+                    data.push(...newItems);
+                    localStorage.setItem("ftthData", JSON.stringify(data));
+                    alert("Import Excel berhasil ke LocalStorage");
+                }
+
+                await loadData();
+            };
+
+            reader.readAsBinaryString(file);
+        }
+
+        // OLT Devices Manager Storage
+        let olts = [];
+
+        function renderOlts() {
+            const container = document.getElementById("daftarOlts");
+            if (!container) return;
+
+            if (olts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-warning text-center rounded-3 p-4 m-0 shadow-sm">
+                            <span class="fs-4">🔌</span>
+                            <h6 class="fw-bold mt-2 mb-1">Belum ada OLT terdaftar</h6>
+                            <p class="text-secondary small mb-3">Tambahkan kredensial koneksi perangkat OLT Anda untuk memantau status ONU.</p>
+                            <button type="button" class="btn btn-warning btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addOltModal" onclick="bukaModalTambahOLT()">
+                                ➕ Tambah OLT Sekarang
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let cardsHtml = "";
+            olts.forEach((o, index) => {
+                cardsHtml += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card p-3 border rounded-3 h-100 bg-white shadow-sm hover-card transition">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h6 class="fw-bold text-primary mb-1">📶 ${o.nama}</h6>
+                                    <span class="badge bg-secondary-subtle text-secondary small">${o.tipe}</span>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        ⋮
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 bg-white" style="font-size: 13px;">
+                                        <li><a class="dropdown-item py-2" href="#" onclick="editOLT(${index})">✏️ Edit Kredensial</a></li>
+                                        <li><a class="dropdown-item py-2 text-danger" href="#" onclick="hapusOLT(${index})">🗑️ Hapus</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="small text-muted mb-3">
+                                <div class="mb-1">📍 Host: <code>${o.ip}:${o.port}</code></div>
+                                <div>👤 User: <code>${o.username}</code></div>
+                            </div>
+                            <button class="btn btn-primary w-100 fw-semibold d-flex align-items-center justify-content-center gap-1" onclick="jalankanTelnetOLT(${index})">
+                                ⚡ Hubungkan Telnet
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = cardsHtml;
+        }
+
+        async function loadOlts() {
+            if (supabaseClient) {
+                try {
+                    const { data: dbOlts, error } = await supabaseClient
+                        .from('olts')
+                        .select('*')
+                        .order('id', { ascending: true });
+                    if (error) throw error;
+                    olts = dbOlts || [];
+                } catch (err) {
+                    console.error("Gagal memuat OLT dari Supabase:", err.message);
+                    olts = JSON.parse(localStorage.getItem("ftthOlts") || "[]");
+                }
+            } else {
+                olts = JSON.parse(localStorage.getItem("ftthOlts") || "[]");
+            }
+            renderOlts();
+        }
+
+        function bukaModalTambahOLT() {
+            document.getElementById("editOltIndex").value = "-1";
+            document.getElementById("addOltModalLabel").innerText = "➕ Tambah Koneksi OLT";
+            document.getElementById("oltDeviceNama").value = "";
+            document.getElementById("oltDeviceHost").value = "";
+            document.getElementById("oltDevicePort").value = "23";
+            document.getElementById("oltDeviceUser").value = "root";
+            document.getElementById("oltDevicePass").value = "";
+            document.getElementById("oltDeviceTipe").value = "HIOSO";
+        }
+
+        async function simpanOLT() {
+            const index = parseInt(document.getElementById("editOltIndex").value);
+            const nama = document.getElementById("oltDeviceNama").value.trim();
+            const ip = document.getElementById("oltDeviceHost").value.trim();
+            const port = parseInt(document.getElementById("oltDevicePort").value.trim() || "23");
+            const username = document.getElementById("oltDeviceUser").value.trim();
+            const password = document.getElementById("oltDevicePass").value.trim();
+            const tipe = document.getElementById("oltDeviceTipe").value;
+
+            if (!nama || !ip || !username) {
+                alert("Harap isi Nama, IP Address, dan Username OLT!");
+                return;
+            }
+
+            const newOlt = { nama, ip, port, username, password, tipe };
+
+            if (supabaseClient) {
+                try {
+                    if (index === -1) {
+                        const { error } = await supabaseClient
+                            .from('olts')
+                            .insert([newOlt]);
+                        if (error) throw error;
+                    } else {
+                        const activeId = olts[index].id;
+                        const { error } = await supabaseClient
+                            .from('olts')
+                            .update(newOlt)
+                            .eq('id', activeId);
+                        if (error) throw error;
+                    }
+                } catch (err) {
+                    alert("Gagal menyimpan OLT ke Supabase: " + err.message);
+                    return;
+                }
+            } else {
+                if (index === -1) {
+                    olts.push(newOlt);
+                } else {
+                    olts[index] = newOlt;
+                }
+                localStorage.setItem("ftthOlts", JSON.stringify(olts));
+            }
+
+            await loadOlts();
+
+            const modalEl = document.getElementById('addOltModal');
+            const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modal.hide();
+        }
+
+        function editOLT(index) {
+            const o = olts[index];
+            if (!o) return;
+
+            document.getElementById("editOltIndex").value = index;
+            document.getElementById("addOltModalLabel").innerText = "✏️ Edit Koneksi OLT";
+            document.getElementById("oltDeviceNama").value = o.nama;
+            document.getElementById("oltDeviceHost").value = o.ip;
+            document.getElementById("oltDevicePort").value = o.port;
+            document.getElementById("oltDeviceUser").value = o.username;
+            document.getElementById("oltDevicePass").value = o.password || "";
+            document.getElementById("oltDeviceTipe").value = o.tipe;
+
+            const modalEl = document.getElementById('addOltModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+
+        async function hapusOLT(index) {
+            const o = olts[index];
+            if (!o) return;
+
+            if (confirm("Apakah Anda yakin ingin menghapus koneksi OLT '" + o.nama + "' ini?")) {
+                if (supabaseClient) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('olts')
+                            .delete()
+                            .eq('id', o.id);
+                        if (error) throw error;
+                    } catch (err) {
+                        alert("Gagal menghapus OLT dari Supabase: " + err.message);
+                        return;
+                    }
+                } else {
+                    olts.splice(index, 1);
+                    localStorage.setItem("ftthOlts", JSON.stringify(olts));
+                }
+                await loadOlts();
+            }
+        }
+
+        let activeOltOnuData = null;
+        let oltPortsActivePages = {};
+        const OLT_PAGE_SIZE = 10;
+
+        function resetOltPortPagesAndRender() {
+            oltPortsActivePages = {};
+            renderOltSaasData();
+        }
+
+        function changeOltPortPage(portName, pageNum) {
+            oltPortsActivePages[portName] = pageNum;
+            renderOltSaasData();
+        }
+
+        function updatePortFilterOptions() {
+            const select = document.getElementById("oltSaasPortFilter");
+            if (!select) return;
+            const currentVal = select.value;
+            let html = '<option value="">Semua Port</option>';
+            if (activeOltOnuData) {
+                for (const portName in activeOltOnuData) {
+                    html += `<option value="${portName}">${portName}</option>`;
+                }
+            }
+            select.innerHTML = html;
+            select.value = currentVal;
+            if (select.selectedIndex === -1) {
+                select.value = "";
+            }
+        }
+
+        function renderOltSaasData() {
+            const container = document.getElementById("oltPortsSaasContainer");
+            if (!container) return;
+
+            // Clear previous stats
+            document.getElementById("oltStatTotal").innerText = "-";
+            document.getElementById("oltStatOnline").innerText = "-";
+            document.getElementById("oltStatOffline").innerText = "-";
+
+            if (!activeOltOnuData) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <span class="fs-1 d-block mb-2">🔌</span>
+                        <p class="small m-0">Hubungkan Telnet untuk menampilkan data pelanggan per port PON.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const searchVal = document.getElementById("oltSaasSearch").value.trim().toLowerCase();
+            const portFilter = document.getElementById("oltSaasPortFilter").value;
+            const statusFilter = document.getElementById("oltSaasStatusFilter").value;
+
+            let total = 0;
+            let online = 0;
+            let offline = 0;
+
+            let html = "";
+
+            for (const portName in activeOltOnuData) {
+                // Filter Port
+                if (portFilter !== "" && portName !== portFilter) {
+                    continue;
+                }
+
+                const onus = activeOltOnuData[portName] || [];
+
+                // Hitung stats global dari semua data (tidak terpengaruh search/filter status)
+                onus.forEach(onu => {
+                    total++;
+                    const st = (onu.status || "").toLowerCase();
+                    if (st === "up" || st === "online") {
+                        online++;
+                    } else {
+                        offline++;
+                    }
+                });
+
+                // Filter berdasarkan Pencarian & Status
+                const filteredOnus = onus.filter(onu => {
+                    // Search filter
+                    const pelanggan = (onu.pelanggan || "").toLowerCase();
+                    const mac = (onu.mac_address || "").toLowerCase();
+                    const red = (onu.redaman || "").toLowerCase();
+                    const matchSearch = pelanggan.includes(searchVal) || mac.includes(searchVal) || red.includes(searchVal);
+
+                    // Status filter
+                    const st = (onu.status || "").toLowerCase();
+                    const isOnline = (st === "up" || st === "online");
+                    let matchStatus = true;
+                    if (statusFilter === "online") {
+                        matchStatus = isOnline;
+                    } else if (statusFilter === "offline") {
+                        matchStatus = !isOnline;
+                    }
+
+                    return matchSearch && matchStatus;
+                });
+
+                if (filteredOnus.length === 0 && (searchVal !== "" || statusFilter !== "")) {
+                    // Skip render port jika tidak ada data yang cocok dengan pencarian/filter status
+                    continue;
+                }
+
+                // Setup Pagination
+                if (!oltPortsActivePages[portName]) {
+                    oltPortsActivePages[portName] = 1;
+                }
+                const currentPage = oltPortsActivePages[portName];
+                const totalPages = Math.ceil(filteredOnus.length / OLT_PAGE_SIZE) || 1;
+                
+                // Safety bound check
+                const activePage = Math.min(currentPage, totalPages);
+                const startIndex = (activePage - 1) * OLT_PAGE_SIZE;
+                const paginatedOnus = filteredOnus.slice(startIndex, startIndex + OLT_PAGE_SIZE);
+
+                html += `
+                    <div class="card mb-4 border border-light-subtle shadow-sm bg-white rounded-3">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3 border-0">
+                            <h6 class="fw-bold text-dark m-0" style="font-size: 14px;"><span class="text-primary">📶</span> ${portName}</h6>
+                            <span class="badge bg-secondary text-white fw-semibold small" style="font-size: 11px;">
+                                ${filteredOnus.length} ONU Terdeteksi
+                            </span>
+                        </div>
+                        <div class="card-body p-0 table-responsive style-scroll">
+                            <table class="table table-hover table-sm align-middle m-0 text-start" style="font-size: 12px;">
+                                <thead class="table-light text-secondary">
+                                    <tr>
+                                        <th class="ps-3 py-2" style="width: 50px;">No</th>
+                                        <th class="py-2">Nama Pelanggan</th>
+                                        <th class="py-2">MAC Address</th>
+                                        <th class="py-2">Status</th>
+                                        <th class="py-2">Jarak</th>
+                                        <th class="pe-3 py-2 text-end">Redaman (dBm)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                if (paginatedOnus.length === 0) {
+                    html += `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">Tidak ada data yang cocok dengan filter.</td>
+                        </tr>
+                    `;
+                } else {
+                    paginatedOnus.forEach((onu, idx) => {
+                        const globalIndex = startIndex + idx + 1;
+                        const isUp = (onu.status === "Up" || onu.status === "Online");
+                        const statusClass = isUp ? "bg-success" : "bg-danger";
+                        const redamanColor = getRedamanColor(onu.redaman);
+                        
+                        html += `
+                            <tr>
+                                <td class="ps-3 text-secondary fw-semibold">${globalIndex}</td>
+                                <td class="fw-bold text-dark">${onu.pelanggan || "ONU " + onu.onu_index}</td>
+                                <td><code>${onu.mac_address}</code></td>
+                                <td><span class="badge ${statusClass} small" style="font-size: 10px;">${onu.status}</span></td>
+                                <td>${onu.jarak_m ? onu.jarak_m + " m" : (onu.distance_m ? onu.distance_m + " m" : "-")}</td>
+                                <td class="pe-3 text-end">
+                                    <span class="badge" style="background-color: ${redamanColor}; color: white; min-width: 65px; display: inline-block; font-size: 11px;">
+                                        ${onu.redaman}
+                                    </span>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                `;
+
+                // Render Pagination Controls jika total item melebihi OLT_PAGE_SIZE
+                if (filteredOnus.length > OLT_PAGE_SIZE) {
+                    html += `
+                        <div class="card-footer bg-light-subtle d-flex justify-content-between align-items-center py-2 px-3 border-top-0 border-light" style="font-size: 11px;">
+                            <span class="text-muted">Menampilkan ${startIndex + 1}-${Math.min(startIndex + OLT_PAGE_SIZE, filteredOnus.length)} dari ${filteredOnus.length}</span>
+                            <nav>
+                                <ul class="pagination pagination-sm m-0 gap-1" style="font-size: 10px;">
+                                    <li class="page-item ${activePage === 1 ? 'disabled' : ''}">
+                                        <button class="page-link py-1 px-2 rounded" onclick="changeOltPortPage('${portName}', ${activePage - 1})">Prev</button>
+                                    </li>
+                        `;
+
+                    for (let p = 1; p <= totalPages; p++) {
+                        html += `
+                            <li class="page-item ${activePage === p ? 'active' : ''}">
+                                <button class="page-link py-1 px-2 rounded" onclick="changeOltPortPage('${portName}', ${p})">${p}</button>
+                            </li>
+                        `;
+                    }
+
+                    html += `
+                                    <li class="page-item ${activePage === totalPages ? 'disabled' : ''}">
+                                        <button class="page-link py-1 px-2 rounded" onclick="changeOltPortPage('${portName}', ${activePage + 1})">Next</button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    </div>
+                `;
+            }
+
+            if (html === "") {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <span class="fs-1 d-block mb-2">🔍</span>
+                        <p class="small m-0">Tidak ada pelanggan/ONU yang cocok dengan pencarian atau filter Anda.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = html;
+            }
+
+            // Update stats panel
+            document.getElementById("oltStatTotal").innerText = total;
+            document.getElementById("oltStatOnline").innerText = online;
+            document.getElementById("oltStatOffline").innerText = offline;
+        }
+
+        function jalankanTelnetOLT(index) {
+            const o = olts[index];
+            if (!o) return;
+
+            document.getElementById("activeOltIndex").value = index;
+            document.getElementById("activeOltName").innerText = o.nama + " (" + o.ip + ")";
+            document.getElementById("activeOltJsonOutput").innerText = "{}";
+            
+            // Reset SaaS data & dropdowns
+            activeOltOnuData = null;
+            oltPortsActivePages = {};
+            document.getElementById("oltSaasSearch").value = "";
+            document.getElementById("oltSaasPortFilter").value = "";
+            document.getElementById("oltSaasStatusFilter").value = "";
+            updatePortFilterOptions();
+            renderOltSaasData();
+
+            // Reset status alert & spinner
+            const badge = document.getElementById("activeOltStatusBadge");
+            const desc = document.getElementById("activeOltStatusDesc");
+            const spinner = document.getElementById("oltSaasLoadingSpinner");
+            const saasContainer = document.getElementById("oltPortsSaasContainer");
+
+            badge.innerText = "Ready";
+            badge.className = "badge bg-secondary fs-6";
+            desc.className = "alert alert-secondary py-1 px-2 mb-2 d-none";
+            desc.innerText = "";
+            spinner.classList.add("d-none");
+            saasContainer.classList.remove("d-none");
+
+            const modalEl = document.getElementById('oltConsoleModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+
+            jalankanAmbilDataOLT();
+        }
+
+        async function jalankanAmbilDataOLT() {
+            const index = parseInt(document.getElementById("activeOltIndex").value);
+            const o = olts[index];
+            if (!o) {
+                alert("OLT tidak terpilih.");
+                return;
+            }
+
+            const command = document.getElementById("activeOltCommand").value.trim();
+            const proxyUrl = document.getElementById("activeOltProxyUrl").value.trim();
+            const outputBox = document.getElementById("activeOltJsonOutput");
+            const badge = document.getElementById("activeOltStatusBadge");
+            const desc = document.getElementById("activeOltStatusDesc");
+            const spinner = document.getElementById("oltSaasLoadingSpinner");
+            const saasContainer = document.getElementById("oltPortsSaasContainer");
+
+            // Reset SaaS container & show loading state
+            activeOltOnuData = null;
+            oltPortsActivePages = {};
+            updatePortFilterOptions();
+            renderOltSaasData();
+            spinner.classList.remove("d-none");
+            saasContainer.classList.add("d-none");
+
+            // Set connecting status indicators
+            badge.innerText = "Menghubungkan...";
+            badge.className = "badge bg-warning text-dark fs-6";
+            desc.className = "alert alert-warning py-2 px-3 mb-3";
+            desc.innerText = "Sedang menghubungi API Gateway Proxy di " + proxyUrl + "...";
+            outputBox.innerText = "Connecting to OLT " + o.ip + ":" + o.port + " via Telnet...\nExecuting command sequence per PON port...\n\nWaiting for response...";
+
+            if (!proxyUrl) {
+                badge.innerText = "Gagal";
+                badge.className = "badge bg-danger fs-6";
+                desc.className = "alert alert-danger py-2 px-3 mb-3";
+                desc.innerText = "Koneksi Gagal: Alamat API Proxy Gateway tidak boleh kosong!";
+                outputBox.innerText = "{}";
+                spinner.classList.add("d-none");
+                saasContainer.classList.remove("d-none");
+                return;
+            }
+
+            try {
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host: o.ip, port: o.port, username: o.username, password: o.password, command: command, tipe: o.tipe })
+                });
+                const resData = await response.json();
+                
+                spinner.classList.add("d-none");
+                saasContainer.classList.remove("d-none");
+
+                if (resData.success) {
+                    badge.innerText = "Sukses";
+                    badge.className = "badge bg-success fs-6";
+                    desc.className = "alert alert-success py-2 px-3 mb-3";
+                    desc.innerText = "Berhasil terhubung ke OLT (" + o.ip + ") via proxy pada pukul " + new Date().toLocaleTimeString();
+                    outputBox.innerText = JSON.stringify(resData.parsed, null, 4);
+                    
+                    activeOltOnuData = resData.parsed;
+                    oltPortsActivePages = {};
+                    updatePortFilterOptions();
+                    renderOltSaasData();
+                } else {
+                    throw new Error(resData.error || "Gagal mengambil data dari OLT.");
+                }
+            } catch (err) {
+                console.error("Proxy connection failed:", err.message);
+                spinner.classList.add("d-none");
+                saasContainer.classList.remove("d-none");
+
+                badge.innerText = "Gagal";
+                badge.className = "badge bg-danger fs-6";
+                desc.className = "alert alert-danger py-2 px-3 mb-3";
+                desc.innerText = "Koneksi Gagal: " + err.message + ". Pastikan server proxy lokal Anda sudah berjalan (node olt-proxy.js) dan IP OLT dapat dijangkau dari mesin proxy.";
+                outputBox.innerText = "{\n  \"error\": \"" + err.message + "\"\n}";
+                
+                activeOltOnuData = null;
+                oltPortsActivePages = {};
+                updatePortFilterOptions();
+                renderOltSaasData();
+            }
+        }
+
+        function salinJSONOLTActive() {
+            const outputBox = document.getElementById("activeOltJsonOutput");
+            if (!outputBox) return;
+            const text = outputBox.innerText;
+            if (text === "{}" || text.startsWith("Connecting") || text === "") {
+                alert("Tidak ada data JSON yang bisa disalin.");
+                return;
+            }
+            navigator.clipboard.writeText(text)
+                .then(() => alert("Data JSON berhasil disalin ke clipboard!"))
+                .catch(err => alert("Gagal menyalin teks: " + err));
+        }
+
+        // Optimasi pencarian (debounce)
+        let searchDelay;
+        document.addEventListener("DOMContentLoaded", () => {
+            const cari = document.getElementById("cariPelanggan");
+            if (cari) {
+                cari.addEventListener("input", () => {
+                    clearTimeout(searchDelay);
+                    searchDelay = setTimeout(render, 250);
+                });
+            }
+        });
+
+        // Initialization on startup
+        async function startup() {
+            loadConfigValues();
+            await loadData();
+            await loadOlts();
+        }
+        startup();
+    </script>
 </body>
+
 </html>
